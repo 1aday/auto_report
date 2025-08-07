@@ -9,6 +9,7 @@ import { Activity, Users, Target } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { StyledMetricCard } from "@/components/ui/metric-card"
+import { calculateWeekProgress } from "@/lib/week-progress"
 
 interface WeeklyData {
   week_start: string
@@ -136,22 +137,7 @@ export function SimplifiedGA4Dashboard() {
   const previousWeek = data?.[1]
   
   // Calculate week progress for current week
-  const calculateWeekProgress = () => {
-    if (!latestWeek) return 0
-    
-    const weekStartDate = new Date(latestWeek.week_start)
-    const now = new Date()
-    const weekEndDate = new Date(weekStartDate)
-    weekEndDate.setDate(weekEndDate.getDate() + 6)
-    
-    const isCurrentWeek = now >= weekStartDate && now <= weekEndDate
-    if (!isCurrentWeek) return 0
-    
-    const daysElapsed = Math.max(1, Math.ceil((now.getTime() - weekStartDate.getTime()) / (24 * 60 * 60 * 1000)))
-    return (daysElapsed / 7) * 100
-  }
-  
-  const weekProgress = calculateWeekProgress()
+  const weekProgress = latestWeek ? calculateWeekProgress(latestWeek.week_start) : 0
 
   return (
     <div className="space-y-6">

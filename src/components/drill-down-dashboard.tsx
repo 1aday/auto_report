@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { RefreshCw, Activity, Filter, Users, Target } from "lucide-react"
 import { StyledMetricCard } from "@/components/ui/metric-card"
+import { calculateWeekProgress, isCurrentWeek as checkIsCurrentWeek } from "@/lib/week-progress"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 
@@ -553,13 +554,9 @@ export function DrillDownDashboard() {
           const demosVs12w = demos12wAvg ? ((latestWeekTotals.demo_submit - demos12wAvg) / demos12wAvg) * 100 : null
           
           // Check if latest week is current week
-          const now = new Date()
-          const latestWeekStart = new Date(latestWeek?.week_start || new Date())
-          const latestWeekEnd = new Date(latestWeekStart)
-          latestWeekEnd.setDate(latestWeekEnd.getDate() + 6)
-          const isCurrentWeek = now >= latestWeekStart && now <= latestWeekEnd
-          const daysElapsed = isCurrentWeek ? Math.max(1, Math.ceil((now.getTime() - latestWeekStart.getTime()) / (24 * 60 * 60 * 1000))) : 7
-          const weekProgress = isCurrentWeek ? (daysElapsed / 7) * 100 : 0
+          const latestWeekStart = latestWeek?.week_start || new Date().toISOString()
+          const isCurrentWeek = checkIsCurrentWeek(latestWeekStart)
+          const weekProgress = calculateWeekProgress(latestWeekStart)
           
           return (
             <>

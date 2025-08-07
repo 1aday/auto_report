@@ -7,6 +7,7 @@ import { motion } from "framer-motion"
 import { ArrowUp, ArrowDown, Minus, Sparkles } from "lucide-react"
 
 import { predictWeeklyTotal } from "@/lib/projection"
+import { getWeekProgressLabel } from "@/lib/week-progress"
 
 // Format helpers
 const formatNumber = (num: number) => {
@@ -143,7 +144,9 @@ export function StyledMetricCard({
             {showProgress && progressValue > 0 && (
               <div className="space-y-1">
                 <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Week progress</span>
+                  <span className="text-muted-foreground">
+                    Week progress • {getWeekProgressLabel(progressValue)}
+                  </span>
                   <span className="font-medium">{Math.round(progressValue)}%</span>
                 </div>
                 <div className="h-2 bg-background/50 rounded-full overflow-hidden">

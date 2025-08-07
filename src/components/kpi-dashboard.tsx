@@ -45,6 +45,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { predictWeeklyTotal } from "@/lib/projection"
+import { calculateWeekProgress, getWeekProgressLabel, isCurrentWeek as checkIsCurrentWeek } from "@/lib/week-progress"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -231,20 +232,16 @@ const MetricCard = ({
     purple: "from-purple-500/10 to-purple-500/5 border-purple-500/20",
   }
 
-  // Calculate week progress
-  const weekStartDate = new Date(weekStart)
-  const now = new Date()
-  const weekEndDate = new Date(weekStartDate)
-  weekEndDate.setDate(weekEndDate.getDate() + 6)
-  
-  const isCurrentWeek = now >= weekStartDate && now <= weekEndDate
-  const daysElapsed = isCurrentWeek ? Math.max(1, Math.ceil((now.getTime() - weekStartDate.getTime()) / (24 * 60 * 60 * 1000))) : 7
-  const weekProgress = (daysElapsed / 7) * 100
+  // Calculate week progress using utility function
+  const isCurrentWeek = checkIsCurrentWeek(weekStart)
+  const weekProgress = calculateWeekProgress(weekStart)
+  const weekProgressLabel = getWeekProgressLabel(weekProgress)
   
   // For projected comparison, we'll use the same 12-week average
   // (The vs12WeekPct is already passed as a prop)
   
   // Projection based on weekday multipliers
+  const now = new Date()
   const todayName = now.toLocaleDateString('en-US', { weekday: 'long' })
   const projectedTotal = isCurrentWeek
     ? predictWeeklyTotal(current, todayName)
@@ -296,7 +293,7 @@ const MetricCard = ({
               </div>
               {isCurrentWeek && (
                 <div className="text-xs text-muted-foreground mt-1">
-                  {todayName} ({daysElapsed}/7 days) • 
+                  {todayName} ({Math.round((weekProgress * 7) / 100)}/7 days) • 
                   Projected: <span className="font-medium text-foreground">{formatNumber(projectedTotal)}</span>
                 </div>
               )}
@@ -305,7 +302,9 @@ const MetricCard = ({
             {isCurrentWeek && weekProgress > 0 && (
               <div className="space-y-1">
                 <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Week progress</span>
+                  <span className="text-muted-foreground">
+                    Week progress • {weekProgressLabel}
+                  </span>
                   <span className="font-medium">{Math.round(weekProgress)}%</span>
                 </div>
                 <div className="h-2 bg-background/50 rounded-full overflow-hidden">
