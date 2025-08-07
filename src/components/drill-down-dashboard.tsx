@@ -286,6 +286,7 @@ const useDimensionValues = (dimension: string) => {
       const { data, error } = await supabase
         .from("weekly_breakdown")
         .select(dimConfig.column + ", sessions")
+        .limit(100000) // Large limit to get all dimension values with accurate session counts
 
       if (error) throw error
       
