@@ -174,10 +174,10 @@ const getHeatMapBgColor = (value: number | null | undefined) => {
     return "rgba(34, 197, 94, 0.2)"
   } else if (value < 0) {
     // Red shades for negative
-    if (absValue > 20) return "rgba(239, 68, 68, 0.5)" // red-500
-    if (absValue > 10) return "rgba(239, 68, 68, 0.4)"
-    if (absValue > 5) return "rgba(239, 68, 68, 0.3)"
-    return "rgba(239, 68, 68, 0.2)"
+    if (absValue > 20) return "rgba(129, 68, 68, 0.5)" // red-500
+    if (absValue > 10) return "rgba(129, 68, 68, 0.4)"
+    if (absValue > 5) return "rgba(129, 68, 68, 0.3)"
+    return "rgba(129, 68, 68, 0.2)"
   }
   return "transparent"
 }
@@ -241,14 +241,8 @@ const MetricCard = ({
   const daysElapsed = isCurrentWeek ? Math.max(1, Math.ceil((now.getTime() - weekStartDate.getTime()) / (24 * 60 * 60 * 1000))) : 7
   const weekProgress = (daysElapsed / 7) * 100
   
-  // Calculate 23-week average (if we have enough data)
-  const vs23WeekPct = useMemo(() => {
-    if (historicalData.length < 23) return null
-    const last23Weeks = historicalData.slice(0, 23)
-    const avg23Week = last23Weeks.reduce((sum, val) => sum + val, 0) / last23Weeks.length
-    if (avg23Week === 0) return null
-    return ((current - avg23Week) / avg23Week) * 100
-  }, [historicalData, current])
+  // For projected comparison, we'll use the same 12-week average
+  // (The vs12WeekPct is already passed as a prop)
   
   // Projection based on weekday multipliers
   const todayName = now.toLocaleDateString('en-US', { weekday: 'long' })
@@ -269,13 +263,13 @@ const MetricCard = ({
       })()
     : vs4WeekPct
     
-  const projectedVs23Week = isCurrentWeek && historicalData.length >= 23
+  const projectedVs12Week = isCurrentWeek && historicalData.length >= 12
     ? (() => {
-        const last23Weeks = historicalData.slice(0, 23)
-        const avg23Week = last23Weeks.reduce((sum, val) => sum + val, 0) / last23Weeks.length
-        return avg23Week > 0 ? ((projectedTotal - avg23Week) / avg23Week) * 100 : null
+        const last12Weeks = historicalData.slice(0, 12)
+        const avg12Week = last12Weeks.reduce((sum, val) => sum + val, 0) / last12Weeks.length
+        return avg12Week > 0 ? ((projectedTotal - avg12Week) / avg12Week) * 100 : null
       })()
-    : vs23WeekPct
+    : vs12WeekPct
 
   return (
     <motion.div
@@ -392,13 +386,13 @@ const MetricCard = ({
                   </div>
                   
                   <div className="flex items-center gap-1">
-                    <div className={cn("flex items-center", getPercentageColor(projectedVs23Week))}>
-                      {getTrendIcon(projectedVs23Week, 10)}
+                    <div className={cn("flex items-center", getPercentageColor(projectedVs12Week))}>
+                      {getTrendIcon(projectedVs12Week, 10)}
                       <span className="text-xs font-medium">
-                        {formatPercentage(projectedVs23Week)}
+                        {formatPercentage(projectedVs12Week)}
                       </span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground">vs 23wk avg</span>
+                    <span className="text-[10px] text-muted-foreground">vs 12wk avg</span>
                   </div>
                 </div>
               )}

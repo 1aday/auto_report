@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 import { ArrowUp, ArrowDown, Minus, Sparkles } from "lucide-react"
-import { useMemo } from "react"
+
 import { predictWeeklyTotal } from "@/lib/projection"
 
 // Format helpers
@@ -75,14 +75,8 @@ export function StyledMetricCard({
     purple: "from-purple-500/10 to-purple-500/5 border-purple-500/20",
   }
   
-  // Calculate 23-week average (if we have enough data)
-  const vs23WeekPct = useMemo(() => {
-    if (historicalData.length < 23) return null
-    const last23Weeks = historicalData.slice(0, 23)
-    const avg23Week = last23Weeks.reduce((sum, val) => sum + val, 0) / last23Weeks.length
-    if (avg23Week === 0) return null
-    return ((value - avg23Week) / avg23Week) * 100
-  }, [historicalData, value])
+  // For projected comparison, we'll use the same 12-week average
+  // (There's no separate calculation needed)
   
   // Calculate projection if current week
   const todayName = new Date().toLocaleDateString('en-US', { weekday: 'long' })
@@ -103,13 +97,13 @@ export function StyledMetricCard({
       })()
     : vs4WeekPct
     
-  const projectedVs23Week = isCurrentWeek && historicalData.length >= 23
+  const projectedVs12WeekForDisplay = isCurrentWeek && historicalData.length >= 12
     ? (() => {
-        const last23Weeks = historicalData.slice(0, 23)
-        const avg23Week = last23Weeks.reduce((sum, val) => sum + val, 0) / last23Weeks.length
-        return avg23Week > 0 ? ((projectedTotal - avg23Week) / avg23Week) * 100 : null
+        const last12Weeks = historicalData.slice(0, 12)
+        const avg12Week = last12Weeks.reduce((sum, val) => sum + val, 0) / last12Weeks.length
+        return avg12Week > 0 ? ((projectedTotal - avg12Week) / avg12Week) * 100 : null
       })()
-    : vs23WeekPct
+    : vs12WeekPct
 
   return (
     <motion.div
@@ -235,15 +229,15 @@ export function StyledMetricCard({
                     </div>
                   )}
                   
-                  {projectedVs23Week !== undefined && (
+                  {projectedVs12WeekForDisplay !== undefined && (
                     <div className="flex items-center gap-1">
-                      <div className={cn("flex items-center", getPercentageColor(projectedVs23Week))}>
-                        {getTrendIcon(projectedVs23Week, "sm")}
+                      <div className={cn("flex items-center", getPercentageColor(projectedVs12WeekForDisplay))}>
+                        {getTrendIcon(projectedVs12WeekForDisplay, "sm")}
                         <span className="text-xs font-medium">
-                          {formatPercentage(projectedVs23Week)}
+                          {formatPercentage(projectedVs12WeekForDisplay)}
                         </span>
                       </div>
-                      <span className="text-[10px] text-muted-foreground">vs 23wk avg</span>
+                      <span className="text-[10px] text-muted-foreground">vs 12wk avg</span>
                     </div>
                   )}
                 </div>
