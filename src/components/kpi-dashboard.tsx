@@ -243,16 +243,20 @@ const MetricCard = ({
   // Projection based on weekday multipliers
   const now = new Date()
   const todayName = now.toLocaleDateString('en-US', { weekday: 'long' })
-  const projectedTotal = isCurrentWeek
+  // Show projections for current week OR recent weeks (within 14 days)
+  const twoWeeksAgo = new Date()
+  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14)
+  const shouldProject = isCurrentWeek || (weekStart && new Date(weekStart) > twoWeeksAgo)
+  const projectedTotal = shouldProject
     ? predictWeeklyTotal(current, todayName)
     : current
   
-  // Calculate projected comparisons
-  const projectedVsPrev = isCurrentWeek && previous
+    // Calculate projected comparisons
+  const projectedVsPrev = shouldProject && previous
     ? ((projectedTotal - previous) / previous) * 100
     : changePct
-    
-  const projectedVs4Week = isCurrentWeek && historicalData.length >= 4
+  
+  const projectedVs4Week = shouldProject && historicalData.length >= 4
     ? (() => {
         const last4Weeks = historicalData.slice(0, 4)
         const avg4Week = last4Weeks.reduce((sum, val) => sum + val, 0) / last4Weeks.length
@@ -260,7 +264,7 @@ const MetricCard = ({
       })()
     : vs4WeekPct
     
-  const projectedVs12Week = isCurrentWeek && historicalData.length >= 12
+  const projectedVs12Week = shouldProject && historicalData.length >= 12
     ? (() => {
         const last12Weeks = historicalData.slice(0, 12)
         const avg12Week = last12Weeks.reduce((sum, val) => sum + val, 0) / last12Weeks.length
@@ -291,9 +295,9 @@ const MetricCard = ({
               <div className="text-3xl font-bold tabular-nums">
                 {formatNumber(current)}
               </div>
-              {isCurrentWeek && (
+              {shouldProject && (
                 <div className="text-xs text-muted-foreground mt-1">
-                  {todayName} ({Math.round((weekProgress * 7) / 100)}/7 days) • 
+                  {todayName} ({Math.round((weekProgress * 7) / 100) || 7}/7 days) • 
                   Projected: <span className="font-medium text-foreground">{formatNumber(projectedTotal)}</span>
                 </div>
               )}
@@ -357,8 +361,8 @@ const MetricCard = ({
                 </div>
               </div>
               
-              {/* Projected comparisons (only for current week) */}
-              {isCurrentWeek && (
+              {/* Projected comparisons (for current or recent weeks) */}
+              {shouldProject && (
                 <div className="space-y-1">
                   <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
                     Projected
@@ -401,7 +405,7 @@ const MetricCard = ({
               <div className="text-xs text-muted-foreground border-t pt-2">
                 <div className="flex justify-between items-center">
                   <span>Last week: {formatNumber(previous)}</span>
-                  {isCurrentWeek && projectedTotal !== current && (
+                  {shouldProject && projectedTotal !== current && (
                     <Badge variant={projectedTotal > previous ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
                       <Sparkles className="h-2 w-2 mr-0.5" />
                       {projectedTotal > previous ? "Ahead" : "Behind"}

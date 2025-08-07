@@ -79,18 +79,22 @@ export function StyledMetricCard({
   // For projected comparison, we'll use the same 12-week average
   // (There's no separate calculation needed)
   
-  // Calculate projection if current week
+  // Calculate projection if current week OR if this is the latest week with data
+  // (data might be slightly behind real-time)
   const todayName = new Date().toLocaleDateString('en-US', { weekday: 'long' })
-  const projectedTotal = isCurrentWeek && weekStart
+  const twoWeeksAgo = new Date()
+  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14)
+  const shouldProject = isCurrentWeek || (weekStart && new Date(weekStart) > twoWeeksAgo)
+  const projectedTotal = shouldProject && weekStart
     ? predictWeeklyTotal(value, todayName)
     : value
   
   // Calculate projected comparisons
-  const projectedVsPrev = isCurrentWeek && previousValue
+  const projectedVsPrev = shouldProject && previousValue
     ? ((projectedTotal - previousValue) / previousValue) * 100
     : change
     
-  const projectedVs4Week = isCurrentWeek && historicalData.length >= 4
+  const projectedVs4Week = shouldProject && historicalData.length >= 4
     ? (() => {
         const last4Weeks = historicalData.slice(0, 4)
         const avg4Week = last4Weeks.reduce((sum, val) => sum + val, 0) / last4Weeks.length
@@ -98,7 +102,7 @@ export function StyledMetricCard({
       })()
     : vs4WeekPct
     
-  const projectedVs12WeekForDisplay = isCurrentWeek && historicalData.length >= 12
+  const projectedVs12WeekForDisplay = shouldProject && historicalData.length >= 12
     ? (() => {
         const last12Weeks = historicalData.slice(0, 12)
         const avg12Week = last12Weeks.reduce((sum, val) => sum + val, 0) / last12Weeks.length
@@ -129,10 +133,10 @@ export function StyledMetricCard({
               <div className="text-3xl font-bold tabular-nums">
                 {formatNumber(value)}
               </div>
-              {(subtitle || (isCurrentWeek && projectedTotal !== value)) && (
+              {(subtitle || (shouldProject && projectedTotal !== value)) && (
                 <div className="text-xs text-muted-foreground mt-1">
                   {subtitle}
-                  {isCurrentWeek && projectedTotal !== value && (
+                  {shouldProject && projectedTotal !== value && (
                     <span className="ml-2">
                       Projected: <span className="font-medium text-foreground">{formatNumber(projectedTotal)}</span>
                     </span>
@@ -203,8 +207,8 @@ export function StyledMetricCard({
                 )}
               </div>
               
-              {/* Projected comparisons (only for current week) */}
-              {isCurrentWeek && (
+              {/* Projected comparisons (for current or recent weeks) */}
+              {shouldProject && (
                 <div className="space-y-1">
                   <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
                     Projected
@@ -251,7 +255,7 @@ export function StyledMetricCard({
               <div className="text-xs text-muted-foreground border-t pt-2">
                 <div className="flex justify-between items-center">
                   <span>Last week: {formatNumber(previousValue)}</span>
-                  {isCurrentWeek && projectedTotal !== value && (
+                  {shouldProject && projectedTotal !== value && (
                     <Badge 
                       variant={projectedTotal > previousValue ? "default" : "secondary"} 
                       className="text-[10px] px-1.5 py-0"
