@@ -93,6 +93,7 @@ const useDrillDownData = (dimension: string, filter?: string) => {
             .select("week_start, " + dimConfig.column + ", sessions, demo_submit, vf_signup")
             .eq(dimConfig.column, filter)
             .order("week_start", { ascending: false })
+            .limit(10000) // Large limit to ensure we get all combinations for this filter
           
           if (fallbackError) throw fallbackError
           
@@ -116,19 +117,27 @@ const useDrillDownData = (dimension: string, filter?: string) => {
           })
           
           const processedData = processDataWithComparisons(Object.values(aggregated), dimConfig.column)
-          console.log(`[Drill-Down] Aggregated ${rawData?.length} rows into ${processedData.length} weekly records for ${dimension}="${filter}"`)
+          const uniqueWeeks = [...new Set(processedData.map(d => d.week_start))].sort().reverse()
+          console.log(`[Drill-Down] Fetched ${rawData?.length} raw records for ${dimension}="${filter}"`)
+          console.log(`[Drill-Down] Aggregated into ${processedData.length} records (${uniqueWeeks.length} unique weeks)`)
+          console.log(`[Drill-Down] Weeks range: ${uniqueWeeks[uniqueWeeks.length - 1]} to ${uniqueWeeks[0]}`)
           return processedData
         }
         
         // RPC succeeded - use server-aggregated data
         const processedData = processDataWithComparisons(data || [], dimConfig.column)
-        console.log(`[Drill-Down] Server-aggregated ${processedData.length} weekly records for ${dimension}="${filter}"`)
+        const uniqueWeeks = [...new Set(processedData.map(d => d.week_start))].sort().reverse()
+        console.log(`[Drill-Down] Server-aggregated ${processedData.length} records`)
+        console.log(`[Drill-Down] ${uniqueWeeks.length} unique weeks for ${dimension}="${filter}": ${uniqueWeeks.slice(0, 5).join(', ')}...`)
         return processedData
       } else {
         // For "all", first get top 20 dimension values by total sessions
+        // Get all data to properly calculate top dimension values
         const { data: topDimensions, error: topError } = await supabase
           .from("weekly_breakdown")
           .select(dimConfig.column + ", sessions")
+          .order("week_start", { ascending: false })
+          .limit(100000) // Large limit to ensure we get all data for accurate totals
         
         if (topError) throw topError
         
@@ -149,11 +158,14 @@ const useDrillDownData = (dimension: string, filter?: string) => {
         console.log(`[Drill-Down] Top 20 ${dimension} values by sessions:`, top20.slice(0, 5), '...')
         
         // Now fetch data only for top 20 dimension values
+        // Get all available weeks for these dimension values
+        // Note: weekly_breakdown has multiple rows per week/dimension due to other dimensions
         const { data, error } = await supabase
           .from("weekly_breakdown")
           .select("week_start, " + dimConfig.column + ", sessions, demo_submit, vf_signup")
           .in(dimConfig.column, top20)
           .order("week_start", { ascending: false })
+          .limit(50000) // Large limit to ensure we get all combinations
 
         if (error) throw error
 
@@ -161,7 +173,11 @@ const useDrillDownData = (dimension: string, filter?: string) => {
         const typedData = data as unknown as RawData[] | null
         const processedData = processDataWithComparisons(typedData || [], dimConfig.column)
         
-        console.log(`[Drill-Down] Fetched ${processedData.length} records for top 20 ${dimension} values`)
+        const uniqueWeeks = [...new Set(processedData.map(d => d.week_start))].sort().reverse()
+        const uniqueDimensions = [...new Set(processedData.map(d => d.dimension_value))].length
+        console.log(`[Drill-Down] Fetched ${data?.length} raw records from weekly_breakdown`)
+        console.log(`[Drill-Down] Aggregated into ${processedData.length} records (${uniqueWeeks.length} weeks × ${uniqueDimensions} ${dimension} values)`)
+        console.log(`[Drill-Down] Weeks range: ${uniqueWeeks[uniqueWeeks.length - 1]} to ${uniqueWeeks[0]}`)
         return processedData
       }
     },
