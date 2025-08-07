@@ -271,6 +271,33 @@ const MetricCard = ({
         return avg12Week > 0 ? ((projectedTotal - avg12Week) / avg12Week) * 100 : null
       })()
     : vs12WeekPct
+  
+  // Calculate absolute differences for actual comparisons
+  const actualDiffPrev = previous !== null ? current - previous : null
+  const actualDiff4Week = historicalData.length >= 4 
+    ? current - (historicalData.slice(0, 4).reduce((sum, val) => sum + val, 0) / 4)
+    : null
+  const actualDiff12Week = historicalData.length >= 12
+    ? current - (historicalData.slice(0, 12).reduce((sum, val) => sum + val, 0) / 12)
+    : null
+  
+  // Calculate absolute differences for projected comparisons
+  const projectedDiffPrev = shouldProject && previous !== null 
+    ? projectedTotal - previous 
+    : null
+  const projectedDiff4Week = shouldProject && historicalData.length >= 4
+    ? projectedTotal - (historicalData.slice(0, 4).reduce((sum, val) => sum + val, 0) / 4)
+    : null
+  const projectedDiff12Week = shouldProject && historicalData.length >= 12
+    ? projectedTotal - (historicalData.slice(0, 12).reduce((sum, val) => sum + val, 0) / 12)
+    : null
+    
+  // Format absolute difference
+  const formatDiff = (diff: number | null) => {
+    if (diff === null) return ""
+    const sign = diff >= 0 ? "+" : ""
+    return `${sign}${formatNumber(Math.abs(diff))}`
+  }
 
   return (
     <motion.div
@@ -330,34 +357,55 @@ const MetricCard = ({
                   Actual
                 </div>
                 
-                <div className="flex items-center gap-1">
-                  <div className={cn("flex items-center", getPercentageColor(changePct))}>
-                    {getTrendIcon(changePct, 10)}
-                    <span className="text-xs font-medium">
-                      {formatPercentage(changePct)}
-                    </span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <div className={cn("flex items-center", getPercentageColor(changePct))}>
+                      {getTrendIcon(changePct, 10)}
+                      <span className="text-xs font-medium">
+                        {formatPercentage(changePct)}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">vs last wk</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground">vs last wk</span>
+                  {actualDiffPrev !== null && (
+                    <span className="text-[9px] text-muted-foreground/60">
+                      {formatDiff(actualDiffPrev)}
+                    </span>
+                  )}
                 </div>
                 
-                <div className="flex items-center gap-1">
-                  <div className={cn("flex items-center", getPercentageColor(vs4WeekPct))}>
-                    {getTrendIcon(vs4WeekPct, 10)}
-                    <span className="text-xs font-medium">
-                      {formatPercentage(vs4WeekPct)}
-                    </span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <div className={cn("flex items-center", getPercentageColor(vs4WeekPct))}>
+                      {getTrendIcon(vs4WeekPct, 10)}
+                      <span className="text-xs font-medium">
+                        {formatPercentage(vs4WeekPct)}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">vs 4wk avg</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground">vs 4wk avg</span>
+                  {actualDiff4Week !== null && (
+                    <span className="text-[9px] text-muted-foreground/60">
+                      {formatDiff(actualDiff4Week)}
+                    </span>
+                  )}
                 </div>
                 
-                <div className="flex items-center gap-1">
-                  <div className={cn("flex items-center", getPercentageColor(vs12WeekPct))}>
-                    {getTrendIcon(vs12WeekPct, 10)}
-                    <span className="text-xs font-medium">
-                      {formatPercentage(vs12WeekPct)}
-                    </span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <div className={cn("flex items-center", getPercentageColor(vs12WeekPct))}>
+                      {getTrendIcon(vs12WeekPct, 10)}
+                      <span className="text-xs font-medium">
+                        {formatPercentage(vs12WeekPct)}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">vs 12wk avg</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground">vs 12wk avg</span>
+                  {actualDiff12Week !== null && (
+                    <span className="text-[9px] text-muted-foreground/60">
+                      {formatDiff(actualDiff12Week)}
+                    </span>
+                  )}
                 </div>
               </div>
               
@@ -368,34 +416,55 @@ const MetricCard = ({
                     Projected
                   </div>
                   
-                  <div className="flex items-center gap-1">
-                    <div className={cn("flex items-center", getPercentageColor(projectedVsPrev))}>
-                      {getTrendIcon(projectedVsPrev, 10)}
-                      <span className="text-xs font-medium">
-                        {formatPercentage(projectedVsPrev)}
-                      </span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      <div className={cn("flex items-center", getPercentageColor(projectedVsPrev))}>
+                        {getTrendIcon(projectedVsPrev, 10)}
+                        <span className="text-xs font-medium">
+                          {formatPercentage(projectedVsPrev)}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">vs last wk</span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground">vs last wk</span>
+                    {projectedDiffPrev !== null && (
+                      <span className="text-[9px] text-muted-foreground/60">
+                        {formatDiff(projectedDiffPrev)}
+                      </span>
+                    )}
                   </div>
                   
-                  <div className="flex items-center gap-1">
-                    <div className={cn("flex items-center", getPercentageColor(projectedVs4Week))}>
-                      {getTrendIcon(projectedVs4Week, 10)}
-                      <span className="text-xs font-medium">
-                        {formatPercentage(projectedVs4Week)}
-                      </span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      <div className={cn("flex items-center", getPercentageColor(projectedVs4Week))}>
+                        {getTrendIcon(projectedVs4Week, 10)}
+                        <span className="text-xs font-medium">
+                          {formatPercentage(projectedVs4Week)}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">vs 4wk avg</span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground">vs 4wk avg</span>
+                    {projectedDiff4Week !== null && (
+                      <span className="text-[9px] text-muted-foreground/60">
+                        {formatDiff(projectedDiff4Week)}
+                      </span>
+                    )}
                   </div>
                   
-                  <div className="flex items-center gap-1">
-                    <div className={cn("flex items-center", getPercentageColor(projectedVs12Week))}>
-                      {getTrendIcon(projectedVs12Week, 10)}
-                      <span className="text-xs font-medium">
-                        {formatPercentage(projectedVs12Week)}
-                      </span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      <div className={cn("flex items-center", getPercentageColor(projectedVs12Week))}>
+                        {getTrendIcon(projectedVs12Week, 10)}
+                        <span className="text-xs font-medium">
+                          {formatPercentage(projectedVs12Week)}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">vs 12wk avg</span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground">vs 12wk avg</span>
+                    {projectedDiff12Week !== null && (
+                      <span className="text-[9px] text-muted-foreground/60">
+                        {formatDiff(projectedDiff12Week)}
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
