@@ -133,7 +133,7 @@ export function StyledMetricCard({
   // Format absolute difference
   const formatDiff = (diff: number | null) => {
     if (diff === null) return ""
-    const sign = diff >= 0 ? "+" : ""
+    const sign = diff >= 0 ? "+" : "-"
     return `${sign}${formatNumber(Math.abs(diff))}`
   }
 
