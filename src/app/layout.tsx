@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
-import { EnhancedSidebar } from "@/components/enhanced-sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,18 +32,18 @@ export default function RootLayout({
       >
         <Providers>
           <SidebarProvider defaultOpen={true}>
-            <EnhancedSidebar />
+            <AppSidebar />
             <SidebarInset>
               <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
                 <SidebarTrigger className="-ml-1" />
-                <div className="flex-1 flex items-center gap-2">
-                  <div className="h-px flex-1 bg-border/50" />
-                  <span className="text-xs text-muted-foreground">
-                    Real-time Analytics Dashboard
-                  </span>
+                <div className="h-4 w-px bg-border" />
+                <div className="flex flex-1 items-center gap-2 text-sm">
+                  <span className="font-medium">Analytics Dashboard</span>
+                  <span className="text-muted-foreground">›</span>
+                  <span className="text-muted-foreground">Real-time Data</span>
                 </div>
               </header>
-              <main className="flex-1">
+              <main className="flex-1 p-4">
                 {children}
               </main>
             </SidebarInset>

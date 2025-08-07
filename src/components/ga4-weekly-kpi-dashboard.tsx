@@ -21,14 +21,13 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Line,
-  LineChart,
+
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts"
-import { format } from "date-fns"
+// import { format } from "date-fns" - not currently used
 import { motion, AnimatePresence } from "framer-motion"
 import {
   ArrowDown,
@@ -38,13 +37,12 @@ import {
   Activity,
   FileText,
   UserPlus,
-  Filter,
-  Search,
+
   Download,
   RefreshCw,
   ChevronDown,
   Eye,
-  EyeOff,
+
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -61,7 +59,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
+
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -75,55 +73,54 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  Tooltip as UITooltip,
-  TooltipContent,
+
   TooltipProvider,
-  TooltipTrigger,
+
 } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
 
-// Generate mock data for demonstration
-const generateMockData = (): WeeklyKpiData[] => {
-  const data: WeeklyKpiData[] = []
-  const currentDate = new Date()
-  
-  for (let i = 0; i < 26; i++) {
-    const weekDate = new Date(currentDate)
-    weekDate.setDate(weekDate.getDate() - (i * 7))
-    
-    // Generate realistic-looking data with some variance
-    const sessionsBase = 25000 - (i * 200) + Math.random() * 5000
-    const demosBase = 450 - (i * 5) + Math.random() * 100
-    const signupsBase = 320 - (i * 3) + Math.random() * 80
-    
-    data.push({
-      week: `${weekDate.getFullYear()}|${String(Math.floor((weekDate.getTime() - new Date(weekDate.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1).padStart(2, '0')}`,
-      sessions_total: Math.floor(sessionsBase),
-      sessions_wow: Math.floor((Math.random() - 0.5) * 2000),
-      "sessions_wow_%": parseFloat(((Math.random() - 0.5) * 20).toFixed(1)),
-      sessions_vs_4w: Math.floor((Math.random() - 0.5) * 3000),
-      "sessions_vs_4w_%": parseFloat(((Math.random() - 0.5) * 15).toFixed(1)),
-      sessions_vs_12w: Math.floor((Math.random() - 0.5) * 4000),
-      "sessions_vs_12w_%": parseFloat(((Math.random() - 0.5) * 25).toFixed(1)),
-      demos_total: Math.floor(demosBase),
-      demos_wow: Math.floor((Math.random() - 0.5) * 50),
-      "demos_wow_%": parseFloat(((Math.random() - 0.5) * 15).toFixed(1)),
-      demos_vs_4w: Math.floor((Math.random() - 0.5) * 60),
-      "demos_vs_4w_%": parseFloat(((Math.random() - 0.5) * 12).toFixed(1)),
-      demos_vs_12w: Math.floor((Math.random() - 0.5) * 80),
-      "demos_vs_12w_%": parseFloat(((Math.random() - 0.5) * 18).toFixed(1)),
-      signups_total: Math.floor(signupsBase),
-      signups_wow: Math.floor((Math.random() - 0.5) * 40),
-      "signups_wow_%": parseFloat(((Math.random() - 0.5) * 18).toFixed(1)),
-      signups_vs_4w: Math.floor((Math.random() - 0.5) * 50),
-      "signups_vs_4w_%": parseFloat(((Math.random() - 0.5) * 14).toFixed(1)),
-      signups_vs_12w: Math.floor((Math.random() - 0.5) * 70),
-      "signups_vs_12w_%": parseFloat(((Math.random() - 0.5) * 20).toFixed(1)),
-    })
-  }
-  
-  return data
-}
+// Generate mock data for demonstration (commented out - not currently used)
+// const generateMockData = (): WeeklyKpiData[] => {
+//   const data: WeeklyKpiData[] = []
+//   const currentDate = new Date()
+//   
+//   for (let i = 0; i < 26; i++) {
+//     const weekDate = new Date(currentDate)
+//     weekDate.setDate(weekDate.getDate() - (i * 7))
+//     
+//     // Generate realistic-looking data with some variance
+//     const sessionsBase = 25000 - (i * 200) + Math.random() * 5000
+//     const demosBase = 450 - (i * 5) + Math.random() * 100
+//     const signupsBase = 320 - (i * 3) + Math.random() * 80
+//     
+//     data.push({
+//       week: `${weekDate.getFullYear()}|${String(Math.floor((weekDate.getTime() - new Date(weekDate.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1).padStart(2, '0')}`,
+//       sessions_total: Math.floor(sessionsBase),
+//       sessions_wow: Math.floor((Math.random() - 0.5) * 2000),
+//       "sessions_wow_%": parseFloat(((Math.random() - 0.5) * 20).toFixed(1)),
+//       sessions_vs_4w: Math.floor((Math.random() - 0.5) * 3000),
+//       "sessions_vs_4w_%": parseFloat(((Math.random() - 0.5) * 15).toFixed(1)),
+//       sessions_vs_12w: Math.floor((Math.random() - 0.5) * 4000),
+//       "sessions_vs_12w_%": parseFloat(((Math.random() - 0.5) * 25).toFixed(1)),
+//       demos_total: Math.floor(demosBase),
+//       demos_wow: Math.floor((Math.random() - 0.5) * 50),
+//       "demos_wow_%": parseFloat(((Math.random() - 0.5) * 15).toFixed(1)),
+//       demos_vs_4w: Math.floor((Math.random() - 0.5) * 60),
+//       "demos_vs_4w_%": parseFloat(((Math.random() - 0.5) * 12).toFixed(1)),
+//       demos_vs_12w: Math.floor((Math.random() - 0.5) * 80),
+//       "demos_vs_12w_%": parseFloat(((Math.random() - 0.5) * 18).toFixed(1)),
+//       signups_total: Math.floor(signupsBase),
+//       signups_wow: Math.floor((Math.random() - 0.5) * 40),
+//       "signups_wow_%": parseFloat(((Math.random() - 0.5) * 18).toFixed(1)),
+//       signups_vs_4w: Math.floor((Math.random() - 0.5) * 50),
+//       "signups_vs_4w_%": parseFloat(((Math.random() - 0.5) * 14).toFixed(1)),
+//       signups_vs_12w: Math.floor((Math.random() - 0.5) * 70),
+//       "signups_vs_12w_%": parseFloat(((Math.random() - 0.5) * 20).toFixed(1)),
+//     })
+//   }
+//   
+//   return data
+// }
 
 // Types
 interface WeeklyKpiData {
@@ -326,10 +323,12 @@ const MetricCard: React.FC<{
               className="p-3 rounded-full"
               style={{ backgroundColor: `${color}20` }}
             >
-              {React.cloneElement(icon as React.ReactElement, {
-                className: "w-6 h-6",
-                style: { color },
-              })}
+              {React.isValidElement(icon) 
+                ? React.cloneElement(icon as React.ReactElement<{ className?: string; style?: React.CSSProperties }>, {
+                    className: "w-6 h-6",
+                    style: { color },
+                  })
+                : icon}
             </div>
           </div>
         </CardContent>
@@ -606,7 +605,7 @@ export function GA4WeeklyKPIDashboard() {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Trend Analysis</CardTitle>
-              <Select value={selectedMetric} onValueChange={(v) => setSelectedMetric(v)}>
+              <Select value={selectedMetric} onValueChange={(v) => setSelectedMetric(v as "sessions" | "signups" | "demos")}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue />
                 </SelectTrigger>

@@ -25,6 +25,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input"
 import { supabase } from "@/lib/supabase"
 
+// Type definitions
+interface GA4Event {
+  week_start: string
+  event_name: string
+  event_count?: number
+  session_channel_grouping?: string | null
+  session_default_channel_grouping?: string | null
+  session_source?: string | null
+  session_medium?: string | null
+  ga_session_id?: string | null
+  user_pseudo_id?: string | null
+  [key: string]: unknown // Allow additional properties
+}
+
 // Data fetching hook
 const useGA4Events = () => {
   return useQuery({
@@ -108,13 +122,13 @@ export function GA4AnalyticsDashboard() {
       return acc
     }, {})
 
-    // Source/Medium breakdown
-    const sourceMediumBreakdown = events.reduce((acc: Record<string, number>, event: GA4Event) => {
-      const key = `${event.session_source || 'direct'}/${event.session_medium || 'none'}`
-      const count = event.event_count || 1
-      acc[key] = (acc[key] || 0) + count
-      return acc
-    }, {})
+    // Source/Medium breakdown (commented out - not currently used)
+    // const sourceMediumBreakdown = events.reduce((acc: Record<string, number>, event: GA4Event) => {
+    //   const key = `${event.session_source || 'direct'}/${event.session_medium || 'none'}`
+    //   const count = event.event_count || 1
+    //   acc[key] = (acc[key] || 0) + count
+    //   return acc
+    // }, {})
 
     // Calculate totals
     const totalEvents = events.reduce((sum, e: GA4Event) => sum + (e.event_count || 1), 0)
@@ -330,7 +344,7 @@ export function GA4AnalyticsDashboard() {
       </motion.div>
 
       {/* Main Content Tabs */}
-      <Tabs value={selectedView} onValueChange={(v: string) => setSelectedView(v)} className="space-y-4">
+      <Tabs value={selectedView} onValueChange={(v) => setSelectedView(v as "overview" | "realtime" | "events" | "users")} className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="realtime">Real-time</TabsTrigger>
@@ -404,7 +418,7 @@ export function GA4AnalyticsDashboard() {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
@@ -491,7 +505,7 @@ export function GA4AnalyticsDashboard() {
                     <AnimatePresence>
                       {filteredEvents.slice(0, 20).map((event: GA4Event, index) => (
                         <motion.tr
-                          key={event.id || index}
+                          key={index}
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 10 }}

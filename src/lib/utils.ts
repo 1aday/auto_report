@@ -39,26 +39,26 @@ export function formatRelativeTime(date: Date | string) {
   return formatDate(dateObj, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-// Export utilities
-export function downloadCSV(data: unknown[], filename = 'export.csv') {
-  const csv = Papa.unparse(data)
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const link = document.createElement('a')
-  const url = URL.createObjectURL(blob)
-  link.setAttribute('href', url)
-  link.setAttribute('download', filename)
-  link.style.visibility = 'hidden'
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-}
+// Export utilities (commented out - Papa library not imported)
+// export function downloadCSV(data: unknown[], filename = 'export.csv') {
+//   const csv = Papa.unparse(data)
+//   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+//   const link = document.createElement('a')
+//   const url = URL.createObjectURL(blob)
+//   link.setAttribute('href', url)
+//   link.setAttribute('download', filename)
+//   link.style.visibility = 'hidden'
+//   document.body.appendChild(link)
+//   link.click()
+//   document.body.removeChild(link)
+// }
 
-export function downloadExcel(data: unknown[], filename = 'export.xlsx') {
-  const ws = XLSX.utils.json_to_sheet(data)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1')
-  XLSX.writeFile(wb, filename)
-}
+// export function downloadExcel(data: unknown[], filename = 'export.xlsx') {
+//   const ws = XLSX.utils.json_to_sheet(data)
+//   const wb = XLSX.utils.book_new()
+//   XLSX.utils.book_append_sheet(wb, ws, 'Sheet1')
+//   XLSX.writeFile(wb, filename)
+// }
 
 // Validation utilities
 export function isValidEmail(email: string) {

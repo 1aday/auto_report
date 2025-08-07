@@ -44,7 +44,7 @@ import {
   Sparkles,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { predictWeeklyTotal, pacingVsReference } from "@/lib/projection"
+import { predictWeeklyTotal } from "@/lib/projection"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -193,20 +193,24 @@ const getPercentageColor = (value: number | null | undefined) => {
 }
 
 // Get trend icon
-const getTrendIcon = (value: number | null | undefined) => {
-  if (value === null || value === undefined) return <Minus className="h-4 w-4" />
-  if (value > 0) return <TrendingUp className="h-4 w-4" />
-  if (value < 0) return <TrendingDown className="h-4 w-4" />
-  return <Minus className="h-4 w-4" />
+const getTrendIcon = (value: number | null | undefined, size: number = 16) => {
+  const iconClass = size === 10 ? "h-2.5 w-2.5" : size === 12 ? "h-3 w-3" : "h-4 w-4"
+  if (value === null || value === undefined) return <Minus className={iconClass} />
+  if (value > 0) return <TrendingUp className={iconClass} />
+  if (value < 0) return <TrendingDown className={iconClass} />
+  return <Minus className={iconClass} />
 }
 
-// Metric card component with progress tracking
+// Metric card component with comprehensive comparisons
 const MetricCard = ({ 
   title, 
   icon: Icon, 
   current, 
   previous, 
   changePct,
+  vs4WeekPct,
+  vs12WeekPct,
+  historicalData,
   weekStart,
   color = "primary"
 }: {
@@ -215,6 +219,9 @@ const MetricCard = ({
   current: number
   previous: number | null
   changePct: number | null
+  vs4WeekPct: number | null
+  vs12WeekPct: number | null
+  historicalData: number[]
   weekStart: string
   color?: string
 }) => {
@@ -234,15 +241,41 @@ const MetricCard = ({
   const daysElapsed = isCurrentWeek ? Math.max(1, Math.ceil((now.getTime() - weekStartDate.getTime()) / (24 * 60 * 60 * 1000))) : 7
   const weekProgress = (daysElapsed / 7) * 100
   
-  // NEW: projection & pacing based on weekday multipliers
+  // Calculate 23-week average (if we have enough data)
+  const vs23WeekPct = useMemo(() => {
+    if (historicalData.length < 23) return null
+    const last23Weeks = historicalData.slice(0, 23)
+    const avg23Week = last23Weeks.reduce((sum, val) => sum + val, 0) / last23Weeks.length
+    if (avg23Week === 0) return null
+    return ((current - avg23Week) / avg23Week) * 100
+  }, [historicalData, current])
+  
+  // Projection based on weekday multipliers
   const todayName = now.toLocaleDateString('en-US', { weekday: 'long' })
   const projectedTotal = isCurrentWeek
     ? predictWeeklyTotal(current, todayName)
     : current
   
-  const paceIndicator = isCurrentWeek && previous
-    ? pacingVsReference(current, previous, todayName)
-    : changePct  // fallback for non-current weeks
+  // Calculate projected comparisons
+  const projectedVsPrev = isCurrentWeek && previous
+    ? ((projectedTotal - previous) / previous) * 100
+    : changePct
+    
+  const projectedVs4Week = isCurrentWeek && historicalData.length >= 4
+    ? (() => {
+        const last4Weeks = historicalData.slice(0, 4)
+        const avg4Week = last4Weeks.reduce((sum, val) => sum + val, 0) / last4Weeks.length
+        return avg4Week > 0 ? ((projectedTotal - avg4Week) / avg4Week) * 100 : null
+      })()
+    : vs4WeekPct
+    
+  const projectedVs23Week = isCurrentWeek && historicalData.length >= 23
+    ? (() => {
+        const last23Weeks = historicalData.slice(0, 23)
+        const avg23Week = last23Weeks.reduce((sum, val) => sum + val, 0) / last23Weeks.length
+        return avg23Week > 0 ? ((projectedTotal - avg23Week) / avg23Week) * 100 : null
+      })()
+    : vs23WeekPct
 
   return (
     <motion.div
@@ -292,24 +325,92 @@ const MetricCard = ({
               </div>
             )}
             
-            <div className="flex items-center gap-2 pt-1">
-              <div className={cn("flex items-center gap-1", getPercentageColor(paceIndicator || changePct))}>
-                {getTrendIcon(paceIndicator || changePct)}
-                <span className="font-semibold">
-                  {formatPercentage(paceIndicator || changePct)}
-                </span>
+            {/* Comparisons Grid */}
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+              {/* Actual vs comparisons */}
+              <div className="space-y-1">
+                <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                  Actual
+                </div>
+                
+                <div className="flex items-center gap-1">
+                  <div className={cn("flex items-center", getPercentageColor(changePct))}>
+                    {getTrendIcon(changePct, 10)}
+                    <span className="text-xs font-medium">
+                      {formatPercentage(changePct)}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">vs last wk</span>
+                </div>
+                
+                <div className="flex items-center gap-1">
+                  <div className={cn("flex items-center", getPercentageColor(vs4WeekPct))}>
+                    {getTrendIcon(vs4WeekPct, 10)}
+                    <span className="text-xs font-medium">
+                      {formatPercentage(vs4WeekPct)}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">vs 4wk avg</span>
+                </div>
+                
+                <div className="flex items-center gap-1">
+                  <div className={cn("flex items-center", getPercentageColor(vs12WeekPct))}>
+                    {getTrendIcon(vs12WeekPct, 10)}
+                    <span className="text-xs font-medium">
+                      {formatPercentage(vs12WeekPct)}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">vs 12wk avg</span>
+                </div>
               </div>
-              <span className="text-xs text-muted-foreground">
-                {isCurrentWeek ? "projected vs last week" : "vs last week"}
-              </span>
+              
+              {/* Projected comparisons (only for current week) */}
+              {isCurrentWeek && (
+                <div className="space-y-1">
+                  <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                    Projected
+                  </div>
+                  
+                  <div className="flex items-center gap-1">
+                    <div className={cn("flex items-center", getPercentageColor(projectedVsPrev))}>
+                      {getTrendIcon(projectedVsPrev, 10)}
+                      <span className="text-xs font-medium">
+                        {formatPercentage(projectedVsPrev)}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">vs last wk</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-1">
+                    <div className={cn("flex items-center", getPercentageColor(projectedVs4Week))}>
+                      {getTrendIcon(projectedVs4Week, 10)}
+                      <span className="text-xs font-medium">
+                        {formatPercentage(projectedVs4Week)}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">vs 4wk avg</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-1">
+                    <div className={cn("flex items-center", getPercentageColor(projectedVs23Week))}>
+                      {getTrendIcon(projectedVs23Week, 10)}
+                      <span className="text-xs font-medium">
+                        {formatPercentage(projectedVs23Week)}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">vs 23wk avg</span>
+                  </div>
+                </div>
+              )}
             </div>
             
             {previous !== null && (
               <div className="text-xs text-muted-foreground border-t pt-2">
                 <div className="flex justify-between items-center">
-                  <span>Last week total: {formatNumber(previous)}</span>
+                  <span>Last week: {formatNumber(previous)}</span>
                   {isCurrentWeek && projectedTotal !== current && (
                     <Badge variant={projectedTotal > previous ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
+                      <Sparkles className="h-2 w-2 mr-0.5" />
                       {projectedTotal > previous ? "Ahead" : "Behind"}
                     </Badge>
                   )}
@@ -1022,6 +1123,9 @@ export function KPIDashboard() {
                 current={latestWeek.sessions}
                 previous={previousWeek?.sessions || null}
                 changePct={latestWeek.sessions_vs_prev_pct}
+                vs4WeekPct={latestWeek.sessions_vs_4w_pct}
+                vs12WeekPct={latestWeek.sessions_vs_12w_pct}
+                historicalData={(data || []).map(d => d.sessions)}
                 weekStart={latestWeek.week_start}
                 color="primary"
               />
@@ -1031,6 +1135,9 @@ export function KPIDashboard() {
                 current={latestWeek.vf_signup}
                 previous={previousWeek?.vf_signup || null}
                 changePct={latestWeek.vf_signup_vs_prev_pct}
+                vs4WeekPct={latestWeek.vf_signup_vs_4w_pct}
+                vs12WeekPct={latestWeek.vf_signup_vs_12w_pct}
+                historicalData={(data || []).map(d => d.vf_signup)}
                 weekStart={latestWeek.week_start}
                 color="purple"
               />
@@ -1040,6 +1147,9 @@ export function KPIDashboard() {
                 current={latestWeek.demo_submit}
                 previous={previousWeek?.demo_submit || null}
                 changePct={latestWeek.demo_submit_vs_prev_pct}
+                vs4WeekPct={latestWeek.demo_submit_vs_4w_pct}
+                vs12WeekPct={latestWeek.demo_submit_vs_12w_pct}
+                historicalData={(data || []).map(d => d.demo_submit)}
                 weekStart={latestWeek.week_start}
                 color="blue"
               />

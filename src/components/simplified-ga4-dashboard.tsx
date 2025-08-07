@@ -3,9 +3,9 @@
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+// import { Badge } from "@/components/ui/badge" - not currently used
 import { Skeleton } from "@/components/ui/skeleton"
-import { TrendingUp, Activity, Users, Target } from "lucide-react"
+import { Activity, Users, Target } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { StyledMetricCard } from "@/components/ui/metric-card"
@@ -134,6 +134,24 @@ export function SimplifiedGA4Dashboard() {
 
   const latestWeek = data?.[0]
   const previousWeek = data?.[1]
+  
+  // Calculate week progress for current week
+  const calculateWeekProgress = () => {
+    if (!latestWeek) return 0
+    
+    const weekStartDate = new Date(latestWeek.week_start)
+    const now = new Date()
+    const weekEndDate = new Date(weekStartDate)
+    weekEndDate.setDate(weekEndDate.getDate() + 6)
+    
+    const isCurrentWeek = now >= weekStartDate && now <= weekEndDate
+    if (!isCurrentWeek) return 0
+    
+    const daysElapsed = Math.max(1, Math.ceil((now.getTime() - weekStartDate.getTime()) / (24 * 60 * 60 * 1000)))
+    return (daysElapsed / 7) * 100
+  }
+  
+  const weekProgress = calculateWeekProgress()
 
   return (
     <div className="space-y-6">
@@ -152,24 +170,45 @@ export function SimplifiedGA4Dashboard() {
           value={latestWeek?.sessions || 0}
           previousValue={previousWeek?.sessions}
           change={latestWeek?.sessions_vs_prev_pct || null}
+          vs4WeekPct={latestWeek?.sessions_vs_4w_pct || null}
+          vs12WeekPct={latestWeek?.sessions_vs_12w_pct || null}
+          historicalData={data?.map(d => d.sessions) || []}
           icon={Activity}
           color="primary"
+          showProgress={weekProgress > 0}
+          progressValue={weekProgress}
+          isCurrentWeek={weekProgress > 0}
+          weekStart={latestWeek?.week_start}
         />
         <StyledMetricCard
           title="VF Signups"
           value={latestWeek?.vf_signup || 0}
           previousValue={previousWeek?.vf_signup}
           change={latestWeek?.vf_signup_vs_prev_pct || null}
+          vs4WeekPct={latestWeek?.vf_signup_vs_4w_pct || null}
+          vs12WeekPct={latestWeek?.vf_signup_vs_12w_pct || null}
+          historicalData={data?.map(d => d.vf_signup) || []}
           icon={Users}
           color="purple"
+          showProgress={weekProgress > 0}
+          progressValue={weekProgress}
+          isCurrentWeek={weekProgress > 0}
+          weekStart={latestWeek?.week_start}
         />
         <StyledMetricCard
           title="Demo Submissions"
           value={latestWeek?.demo_submit || 0}
           previousValue={previousWeek?.demo_submit}
           change={latestWeek?.demo_submit_vs_prev_pct || null}
+          vs4WeekPct={latestWeek?.demo_submit_vs_4w_pct || null}
+          vs12WeekPct={latestWeek?.demo_submit_vs_12w_pct || null}
+          historicalData={data?.map(d => d.demo_submit) || []}
           icon={Target}
           color="blue"
+          showProgress={weekProgress > 0}
+          progressValue={weekProgress}
+          isCurrentWeek={weekProgress > 0}
+          weekStart={latestWeek?.week_start}
         />
       </div>
 

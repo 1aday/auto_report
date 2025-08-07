@@ -80,15 +80,17 @@ const useDrillDownData = (dimension: string, filter?: string) => {
         if (error) {
           // RPC function not found or error - fallback to client-side aggregation
           // This is expected if the RPC hasn't been created yet
+          type FallbackRow = { 
+            week_start: string; 
+            sessions?: number; 
+            demo_submit?: number; 
+            vf_signup?: number; 
+            [key: string]: unknown 
+          }
+          
           const { data: rawData, error: fallbackError } = await supabase
             .from("weekly_breakdown")
-            .select(`
-              week_start,
-              ${dimConfig.column},
-              sessions,
-              demo_submit,
-              vf_signup
-            `)
+            .select("week_start, " + dimConfig.column + ", sessions, demo_submit, vf_signup")
             .eq(dimConfig.column, filter)
             .order("week_start", { ascending: false })
           
@@ -96,7 +98,8 @@ const useDrillDownData = (dimension: string, filter?: string) => {
           
           // Aggregate by week_start
           const aggregated: Record<string, RawData> = {}
-          rawData?.forEach(row => {
+          const typedRawData = rawData as unknown as FallbackRow[] | null
+          typedRawData?.forEach((row) => {
             const key = row.week_start
             if (!aggregated[key]) {
               aggregated[key] = {
@@ -125,15 +128,16 @@ const useDrillDownData = (dimension: string, filter?: string) => {
         // For "all", first get top 20 dimension values by total sessions
         const { data: topDimensions, error: topError } = await supabase
           .from("weekly_breakdown")
-          .select(`${dimConfig.column}, sessions`)
+          .select(dimConfig.column + ", sessions")
         
         if (topError) throw topError
         
         // Aggregate sessions by dimension value
         const sessionsByDim: Record<string, number> = {}
-        topDimensions?.forEach(row => {
-          const dimValue = row[dimConfig.column] || '(not set)'
-          sessionsByDim[dimValue] = (sessionsByDim[dimValue] || 0) + (row.sessions || 0)
+        const typedTopDimensions = topDimensions as unknown as Record<string, unknown>[] | null
+        typedTopDimensions?.forEach((row) => {
+          const dimValue = row[dimConfig.column] as string || '(not set)'
+          sessionsByDim[dimValue] = (sessionsByDim[dimValue] || 0) + (row.sessions as number || 0)
         })
         
         // Get top 20 dimension values by total sessions
@@ -147,20 +151,15 @@ const useDrillDownData = (dimension: string, filter?: string) => {
         // Now fetch data only for top 20 dimension values
         const { data, error } = await supabase
           .from("weekly_breakdown")
-          .select(`
-            week_start,
-            ${dimConfig.column},
-            sessions,
-            demo_submit,
-            vf_signup
-          `)
+          .select("week_start, " + dimConfig.column + ", sessions, demo_submit, vf_signup")
           .in(dimConfig.column, top20)
           .order("week_start", { ascending: false })
 
         if (error) throw error
 
         // Process data to calculate week-over-week changes
-        const processedData = processDataWithComparisons(data || [], dimConfig.column)
+        const typedData = data as unknown as RawData[] | null
+        const processedData = processDataWithComparisons(typedData || [], dimConfig.column)
         
         console.log(`[Drill-Down] Fetched ${processedData.length} records for top 20 ${dimension} values`)
         return processedData
@@ -270,15 +269,16 @@ const useDimensionValues = (dimension: string) => {
 
       const { data, error } = await supabase
         .from("weekly_breakdown")
-        .select(`${dimConfig.column}, sessions`)
+        .select(dimConfig.column + ", sessions")
 
       if (error) throw error
       
       // Group by dimension value and sum sessions
       const sessionsByDimension: Record<string, number> = {}
-      data?.forEach(row => {
-        const dimValue = row[dimConfig.column] || '(not set)'
-        sessionsByDimension[dimValue] = (sessionsByDimension[dimValue] || 0) + (row.sessions || 0)
+      const typedData = data as unknown as Record<string, unknown>[] | null
+      typedData?.forEach(row => {
+        const dimValue = row[dimConfig.column] as string || '(not set)'
+        sessionsByDimension[dimValue] = (sessionsByDimension[dimValue] || 0) + (row.sessions as number || 0)
       })
       
       // Sort by total sessions descending and return with session counts
@@ -507,6 +507,53 @@ export function DrillDownDashboard() {
             ? `All ${DIMENSIONS[selectedDimension as keyof typeof DIMENSIONS].label}s`
             : selectedFilter
           
+          // Calculate historical data for selected filter
+          const historicalSessions = selectedFilter === "all" 
+            ? (data || []).map(week => week.sessions)
+            : displayData.map(week => week.sessions)
+          const historicalSignups = selectedFilter === "all"
+            ? (data || []).map(week => week.vf_signup)
+            : displayData.map(week => week.vf_signup)
+          const historicalDemos = selectedFilter === "all"
+            ? (data || []).map(week => week.demo_submit)
+            : displayData.map(week => week.demo_submit)
+            
+          // Calculate 4-week and 12-week averages for comparisons
+          const calc4WeekAvg = (data: number[]) => {
+            if (data.length < 5) return null // Need at least 5 weeks (current + 4 previous)
+            const last4 = data.slice(1, 5) // Skip current week, take next 4
+            return last4.reduce((sum, val) => sum + val, 0) / 4
+          }
+          
+          const calc12WeekAvg = (data: number[]) => {
+            if (data.length < 13) return null // Need at least 13 weeks
+            const last12 = data.slice(1, 13) // Skip current week, take next 12
+            return last12.reduce((sum, val) => sum + val, 0) / 12
+          }
+          
+          const sessions4wAvg = calc4WeekAvg(historicalSessions)
+          const sessions12wAvg = calc12WeekAvg(historicalSessions)
+          const signups4wAvg = calc4WeekAvg(historicalSignups)
+          const signups12wAvg = calc12WeekAvg(historicalSignups)
+          const demos4wAvg = calc4WeekAvg(historicalDemos)
+          const demos12wAvg = calc12WeekAvg(historicalDemos)
+          
+          const sessionsVs4w = sessions4wAvg ? ((latestWeekTotals.sessions - sessions4wAvg) / sessions4wAvg) * 100 : null
+          const sessionsVs12w = sessions12wAvg ? ((latestWeekTotals.sessions - sessions12wAvg) / sessions12wAvg) * 100 : null
+          const signupsVs4w = signups4wAvg ? ((latestWeekTotals.vf_signup - signups4wAvg) / signups4wAvg) * 100 : null
+          const signupsVs12w = signups12wAvg ? ((latestWeekTotals.vf_signup - signups12wAvg) / signups12wAvg) * 100 : null
+          const demosVs4w = demos4wAvg ? ((latestWeekTotals.demo_submit - demos4wAvg) / demos4wAvg) * 100 : null
+          const demosVs12w = demos12wAvg ? ((latestWeekTotals.demo_submit - demos12wAvg) / demos12wAvg) * 100 : null
+          
+          // Check if latest week is current week
+          const now = new Date()
+          const latestWeekStart = new Date(latestWeek?.week_start || new Date())
+          const latestWeekEnd = new Date(latestWeekStart)
+          latestWeekEnd.setDate(latestWeekEnd.getDate() + 6)
+          const isCurrentWeek = now >= latestWeekStart && now <= latestWeekEnd
+          const daysElapsed = isCurrentWeek ? Math.max(1, Math.ceil((now.getTime() - latestWeekStart.getTime()) / (24 * 60 * 60 * 1000))) : 7
+          const weekProgress = isCurrentWeek ? (daysElapsed / 7) * 100 : 0
+          
           return (
             <>
               <StyledMetricCard
@@ -514,27 +561,48 @@ export function DrillDownDashboard() {
                 value={latestWeekTotals.sessions}
                 previousValue={previousWeekTotals.sessions || undefined}
                 change={sessionsChange}
+                vs4WeekPct={sessionsVs4w}
+                vs12WeekPct={sessionsVs12w}
+                historicalData={historicalSessions}
                 icon={Activity}
                 color="primary"
                 subtitle={`${filterLabel} - Latest week`}
+                showProgress={weekProgress > 0}
+                progressValue={weekProgress}
+                isCurrentWeek={isCurrentWeek}
+                weekStart={latestWeek?.week_start}
               />
               <StyledMetricCard
                 title="VF Signups"
                 value={latestWeekTotals.vf_signup}
                 previousValue={previousWeekTotals.vf_signup || undefined}
                 change={signupsChange}
+                vs4WeekPct={signupsVs4w}
+                vs12WeekPct={signupsVs12w}
+                historicalData={historicalSignups}
                 icon={Users}
                 color="purple"
                 subtitle={`${filterLabel} - Latest week`}
+                showProgress={weekProgress > 0}
+                progressValue={weekProgress}
+                isCurrentWeek={isCurrentWeek}
+                weekStart={latestWeek?.week_start}
               />
               <StyledMetricCard
                 title="Demo Submissions"
                 value={latestWeekTotals.demo_submit}
                 previousValue={previousWeekTotals.demo_submit || undefined}
                 change={demosChange}
+                vs4WeekPct={demosVs4w}
+                vs12WeekPct={demosVs12w}
+                historicalData={historicalDemos}
                 icon={Target}
                 color="blue"
                 subtitle={`${filterLabel} - Latest week`}
+                showProgress={weekProgress > 0}
+                progressValue={weekProgress}
+                isCurrentWeek={isCurrentWeek}
+                weekStart={latestWeek?.week_start}
               />
             </>
           )

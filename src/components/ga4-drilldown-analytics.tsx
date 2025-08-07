@@ -22,7 +22,7 @@ import {
   Users,
   MousePointer,
   Search,
-  Filter as FilterIcon,
+
   Download
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
@@ -52,18 +52,22 @@ interface DrillDownData {
 
 interface CampaignData extends DrillDownData {
   campaign: string
+  [key: string]: unknown
 }
 
 interface MediumData extends DrillDownData {
   medium: string
+  [key: string]: unknown
 }
 
 interface ChannelData extends DrillDownData {
   channel: string
+  [key: string]: unknown
 }
 
 interface FirstSourceData extends DrillDownData {
   first_source: string
+  [key: string]: unknown
 }
 
 // Custom hooks for fetching data

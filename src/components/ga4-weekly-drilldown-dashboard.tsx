@@ -14,21 +14,22 @@ import {
   type SortingState,
   type VisibilityState,
 } from "@tanstack/react-table"
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts"
-import { format } from "date-fns"
+// Recharts imports removed - not currently used
+// import {
+//   Area,
+//   AreaChart,
+//   Bar,
+//   BarChart,
+//   CartesianGrid,
+//   Cell,
+//   Line,
+//   LineChart,
+//   ResponsiveContainer,
+//   Tooltip,
+//   XAxis,
+//   YAxis,
+// } from "recharts"
+// import { format } from "date-fns" - not currently used
 import { motion, AnimatePresence } from "framer-motion"
 import {
   ArrowDown,
@@ -38,17 +39,16 @@ import {
   Activity,
   FileText,
   UserPlus,
-  Filter,
-  Search,
+
   Download,
   RefreshCw,
   ChevronDown,
   Eye,
-  EyeOff,
+
   Globe,
   Hash,
   Megaphone,
-  Target,
+
   Layers,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -56,17 +56,17 @@ import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
-  CardDescription,
+
   CardHeader,
-  CardTitle,
+
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
+// import { Skeleton } from "@/components/ui/skeleton" - not currently used
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
+
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -78,15 +78,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  Tooltip as UITooltip,
-  TooltipContent,
+
   TooltipProvider,
-  TooltipTrigger,
+
 } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
+// import { Separator } from "@/components/ui/separator" - not currently used
 
 // Base types for raw data from materialized views
 interface BaseMetrics {
@@ -96,41 +95,42 @@ interface BaseMetrics {
   vf_signup: number
 }
 
-interface SiteWideRaw extends BaseMetrics {}
+// Unused interface definitions (commented out)
+// interface SiteWideRaw extends BaseMetrics {}
+// 
+// interface ChannelRaw extends BaseMetrics {
+//   channel: string
+// }
+// 
+// interface SourceMediumRaw extends BaseMetrics {
+//   src: string
+//   med: string
+// }
+// 
+// interface CampaignRaw extends BaseMetrics {
+//   src: string
+//   med: string
+//   camp: string | null
+//   kw: string | null
+//   first_src: string | null
+// }
 
-interface ChannelRaw extends BaseMetrics {
-  channel: string
-}
-
-interface SourceMediumRaw extends BaseMetrics {
-  src: string
-  med: string
-}
-
-interface CampaignRaw extends BaseMetrics {
-  src: string
-  med: string
-  camp: string | null
-  kw: string | null
-  first_src: string | null
-}
-
-// Enhanced types with calculated percentages
-interface EnhancedMetrics {
-  week: string
-  sessions: number
-  sessions_wow_pct: number
-  sessions_4w_pct: number
-  sessions_12w_pct: number
-  demo_submit: number
-  demo_submit_wow_pct: number
-  demo_submit_4w_pct: number
-  demo_submit_12w_pct: number
-  vf_signup: number
-  vf_signup_wow_pct: number
-  vf_signup_4w_pct: number
-  vf_signup_12w_pct: number
-}
+// Enhanced types with calculated percentages (commented out - not currently used)
+// interface EnhancedMetrics {
+//   week: string
+//   sessions: number
+//   sessions_wow_pct: number
+//   sessions_4w_pct: number
+//   sessions_12w_pct: number
+//   demo_submit: number
+//   demo_submit_wow_pct: number
+//   demo_submit_4w_pct: number
+//   demo_submit_12w_pct: number
+//   vf_signup: number
+//   vf_signup_wow_pct: number
+//   vf_signup_4w_pct: number
+//   vf_signup_12w_pct: number
+// }
 
 // Helper function to calculate percentage change
 const calculatePercentageChange = (current: number, previous: number): number => {
@@ -177,9 +177,20 @@ function enhanceWithPercentages<T extends BaseMetrics>(
     })
   }
 
-  const enhanced: unknown[] = []
+  const enhanced: (T & { 
+    week: string
+    sessions_wow_pct: number
+    sessions_4w_pct: number
+    sessions_12w_pct: number
+    demo_submit_wow_pct: number
+    demo_submit_4w_pct: number
+    demo_submit_12w_pct: number
+    vf_signup_wow_pct: number
+    vf_signup_4w_pct: number
+    vf_signup_12w_pct: number
+  })[] = []
 
-  Object.entries(groups).forEach(([groupKey, groupData]) => {
+  Object.entries(groups).forEach(([, groupData]) => {
     groupData.forEach((item, index) => {
       const weekNum = Math.floor((new Date(item.week_start).getTime() - new Date(new Date(item.week_start).getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1
       const week = `${new Date(item.week_start).getFullYear()}|${String(weekNum).padStart(2, '0')}`
@@ -230,9 +241,11 @@ function enhanceWithPercentages<T extends BaseMetrics>(
   })
 
   // Sort final results by week_start descending
-  return enhanced.sort((a, b) => 
-    new Date(b.week_start).getTime() - new Date(a.week_start).getTime()
-  )
+  return enhanced.sort((a, b) => {
+    const aItem = a as T & { week_start: string }
+    const bItem = b as T & { week_start: string }
+    return new Date(bItem.week_start).getTime() - new Date(aItem.week_start).getTime()
+  })
 }
 
 // Heat map color function
@@ -433,8 +446,8 @@ function DataTable<T>({ data, columns, isLoading, searchPlaceholder = "Search...
             <SelectContent>
               <SelectItem value="all">All {column}s</SelectItem>
               {Array.from(new Set(data.map((row) => (row as Record<string, unknown>)[column]))).map((value) => (
-                <SelectItem key={value} value={value}>
-                  {value}
+                <SelectItem key={String(value)} value={String(value)}>
+                  {String(value)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -554,7 +567,18 @@ export function GA4WeeklyDrilldownDashboard() {
   }, [])
 
   // Define columns for each view
-  const siteWideColumns = useMemo<ColumnDef<SiteWideKPI>[]>(
+  const siteWideColumns = useMemo<ColumnDef<BaseMetrics & { 
+    week: string
+    sessions_wow_pct: number
+    sessions_4w_pct: number
+    sessions_12w_pct: number
+    demo_submit_wow_pct: number
+    demo_submit_4w_pct: number
+    demo_submit_12w_pct: number
+    vf_signup_wow_pct: number
+    vf_signup_4w_pct: number
+    vf_signup_12w_pct: number
+  }>[]>(
     () => [
       {
         accessorKey: "week",
@@ -625,7 +649,19 @@ export function GA4WeeklyDrilldownDashboard() {
     [isDark]
   )
 
-  const channelColumns = useMemo<ColumnDef<ChannelKPI>[]>(
+  const channelColumns = useMemo<ColumnDef<BaseMetrics & { 
+    week: string
+    sessions_wow_pct: number
+    sessions_4w_pct: number
+    sessions_12w_pct: number
+    demo_submit_wow_pct: number
+    demo_submit_4w_pct: number
+    demo_submit_12w_pct: number
+    vf_signup_wow_pct: number
+    vf_signup_4w_pct: number
+    vf_signup_12w_pct: number
+    channel?: string
+  }>[]>(
     () => [
       {
         accessorKey: "week",
@@ -675,7 +711,20 @@ export function GA4WeeklyDrilldownDashboard() {
     [isDark]
   )
 
-  const sourceMediumColumns = useMemo<ColumnDef<SourceMediumKPI>[]>(
+  const sourceMediumColumns = useMemo<ColumnDef<BaseMetrics & { 
+    week: string
+    sessions_wow_pct: number
+    sessions_4w_pct: number
+    sessions_12w_pct: number
+    demo_submit_wow_pct: number
+    demo_submit_4w_pct: number
+    demo_submit_12w_pct: number
+    vf_signup_wow_pct: number
+    vf_signup_4w_pct: number
+    vf_signup_12w_pct: number
+    src?: string
+    med?: string
+  }>[]>(
     () => [
       {
         accessorKey: "week",
@@ -734,7 +783,23 @@ export function GA4WeeklyDrilldownDashboard() {
     [isDark]
   )
 
-  const campaignColumns = useMemo<ColumnDef<CampaignKPI>[]>(
+  const campaignColumns = useMemo<ColumnDef<BaseMetrics & { 
+    week: string
+    sessions_wow_pct: number
+    sessions_4w_pct: number
+    sessions_12w_pct: number
+    demo_submit_wow_pct: number
+    demo_submit_4w_pct: number
+    demo_submit_12w_pct: number
+    vf_signup_wow_pct: number
+    vf_signup_4w_pct: number
+    vf_signup_12w_pct: number
+    camp?: string | null
+    kw?: string | null
+    first_src?: string | null
+    src?: string
+    med?: string
+  }>[]>(
     () => [
       {
         accessorKey: "week",
@@ -868,10 +933,12 @@ export function GA4WeeklyDrilldownDashboard() {
                 className="p-3 rounded-full"
                 style={{ backgroundColor: `${color}20` }}
               >
-                {React.cloneElement(icon as React.ReactElement, {
-                  className: "w-5 h-5",
-                  style: { color },
-                })}
+                {React.isValidElement(icon) 
+                  ? React.cloneElement(icon as React.ReactElement<{ className?: string; style?: React.CSSProperties }>, {
+                      className: "w-5 h-5",
+                      style: { color },
+                    })
+                  : icon}
               </div>
             </div>
           </CardContent>
@@ -947,7 +1014,7 @@ export function GA4WeeklyDrilldownDashboard() {
         {/* Main Content */}
         <Card className="border-0 shadow-lg">
           <CardHeader>
-            <Tabs value={selectedView} onValueChange={(v) => setSelectedView(v)} className="w-full">
+            <Tabs value={selectedView} onValueChange={(v) => setSelectedView(v as "sitewide" | "channel" | "source" | "campaign")} className="w-full">
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="sitewide" className="flex items-center gap-2">
                   <Globe className="w-4 h-4" />
