@@ -74,7 +74,7 @@ const useDrillDownData = (dimension: string, filter?: string) => {
         // Use RPC to aggregate data properly
         const { data, error } = await supabase.rpc('aggregate_weekly_by_dimension', {
           dimension_column: dimConfig.column,
-          dimension_value: filter
+          filter_value: filter
         })
         
         if (error) {
@@ -117,10 +117,6 @@ const useDrillDownData = (dimension: string, filter?: string) => {
           })
           
           const processedData = processDataWithComparisons(Object.values(aggregated), dimConfig.column)
-          const uniqueWeeks = [...new Set(processedData.map(d => d.week_start))].sort().reverse()
-          console.log(`[Drill-Down] Fetched ${rawData?.length} raw records for ${dimension}="${filter}"`)
-          console.log(`[Drill-Down] Aggregated into ${processedData.length} records (${uniqueWeeks.length} unique weeks)`)
-          console.log(`[Drill-Down] Weeks range: ${uniqueWeeks[uniqueWeeks.length - 1]} to ${uniqueWeeks[0]}`)
           return processedData
         }
         
@@ -172,12 +168,6 @@ const useDrillDownData = (dimension: string, filter?: string) => {
         // Process data to calculate week-over-week changes
         const typedData = data as unknown as RawData[] | null
         const processedData = processDataWithComparisons(typedData || [], dimConfig.column)
-        
-        const uniqueWeeks = [...new Set(processedData.map(d => d.week_start))].sort().reverse()
-        const uniqueDimensions = [...new Set(processedData.map(d => d.dimension_value))].length
-        console.log(`[Drill-Down] Fetched ${data?.length} raw records from weekly_breakdown`)
-        console.log(`[Drill-Down] Aggregated into ${processedData.length} records (${uniqueWeeks.length} weeks × ${uniqueDimensions} ${dimension} values)`)
-        console.log(`[Drill-Down] Weeks range: ${uniqueWeeks[uniqueWeeks.length - 1]} to ${uniqueWeeks[0]}`)
         return processedData
       }
     },
