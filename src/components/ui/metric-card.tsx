@@ -134,7 +134,15 @@ export function StyledMetricCard({
   const formatDiff = (diff: number | null) => {
     if (diff === null) return ""
     const sign = diff >= 0 ? "+" : "-"
-    return `${sign}${formatNumber(Math.abs(diff))}`
+    const absDiff = Math.abs(diff)
+    
+    // For signups/demos, round up and don't show decimals
+    if (title && (title.toLowerCase().includes('signup') || title.toLowerCase().includes('demo'))) {
+      return `${sign}${Math.ceil(absDiff).toLocaleString()}`
+    }
+    
+    // For other metrics, use standard formatting
+    return `${sign}${formatNumber(absDiff)}`
   }
 
   return (
