@@ -571,7 +571,7 @@ export function DrillDownDashboard() {
                 icon={Activity}
                 color="primary"
                 subtitle={`${filterLabel} - Latest week`}
-                showProgress={weekProgress > 0}
+                showProgress={true}
                 progressValue={weekProgress}
                 isCurrentWeek={isCurrentWeek}
                 weekStart={latestWeek?.week_start}
@@ -587,7 +587,7 @@ export function DrillDownDashboard() {
                 icon={Users}
                 color="purple"
                 subtitle={`${filterLabel} - Latest week`}
-                showProgress={weekProgress > 0}
+                showProgress={true}
                 progressValue={weekProgress}
                 isCurrentWeek={isCurrentWeek}
                 weekStart={latestWeek?.week_start}
@@ -603,7 +603,7 @@ export function DrillDownDashboard() {
                 icon={Target}
                 color="blue"
                 subtitle={`${filterLabel} - Latest week`}
-                showProgress={weekProgress > 0}
+                showProgress={true}
                 progressValue={weekProgress}
                 isCurrentWeek={isCurrentWeek}
                 weekStart={latestWeek?.week_start}

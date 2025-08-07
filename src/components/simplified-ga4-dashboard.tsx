@@ -161,7 +161,7 @@ export function SimplifiedGA4Dashboard() {
           historicalData={data?.map(d => d.sessions) || []}
           icon={Activity}
           color="primary"
-          showProgress={weekProgress > 0}
+                        showProgress={true}
           progressValue={weekProgress}
           isCurrentWeek={weekProgress > 0}
           weekStart={latestWeek?.week_start}
@@ -176,7 +176,7 @@ export function SimplifiedGA4Dashboard() {
           historicalData={data?.map(d => d.vf_signup) || []}
           icon={Users}
           color="purple"
-          showProgress={weekProgress > 0}
+                        showProgress={true}
           progressValue={weekProgress}
           isCurrentWeek={weekProgress > 0}
           weekStart={latestWeek?.week_start}
@@ -191,7 +191,7 @@ export function SimplifiedGA4Dashboard() {
           historicalData={data?.map(d => d.demo_submit) || []}
           icon={Target}
           color="blue"
-          showProgress={weekProgress > 0}
+                        showProgress={true}
           progressValue={weekProgress}
           isCurrentWeek={weekProgress > 0}
           weekStart={latestWeek?.week_start}
