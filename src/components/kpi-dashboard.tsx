@@ -367,44 +367,68 @@ const MetricCard = ({
                   )}
                 </div>
                 
-                {/* The Perfect Progress Bar - Previous Week as Target */}
+                {/* The Perfect Progress Bar - Clean & Stunning */}
                 <div className="space-y-2">
-                  <div className="relative h-14 bg-muted/40 dark:bg-muted/30 rounded-lg overflow-hidden border border-border/50">
-                    {/* Scale: Make bar 2x to allow exceeding last week */}
+                  {/* Labels above the bar */}
+                  <div className="flex justify-between items-center text-[11px]">
+                    <div className="text-muted-foreground">
+                      Last week: <span className="font-medium text-foreground">{formatNumber(previous || 0)}</span>
+                    </div>
+                    {shouldProject && (
+                      <div className="text-muted-foreground">
+                        Proj: <span className="font-medium text-primary">{formatNumber(projectedTotal)}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Progress bar container */}
+                  <div className="relative h-8 bg-gradient-to-r from-background to-muted/20 rounded-full overflow-hidden border border-border/30 shadow-inner">
                     {(() => {
-                      const maxValue = Math.max(previous || 0, projectedTotal, current) * 1.2
+                      const maxValue = Math.max(previous || 0, projectedTotal, current) * 1.15
                       const scale = (val: number) => (val / maxValue) * 100
                       
                       return (
                         <>
-                          {/* Last week's total as the target bar */}
+                          {/* Last week's reference line */}
                           {previous && (
                             <div 
-                              className="absolute top-4 h-6 bg-slate-200 dark:bg-slate-700 rounded-r border border-slate-300 dark:border-slate-600"
-                              style={{ width: `${scale(previous)}%` }}
-                            >
-                              <div className="absolute -top-3.5 right-0 text-[9px] text-slate-600 dark:text-slate-400 font-medium">
-                                Last week: {formatNumber(previous)}
-                              </div>
-                            </div>
+                              className="absolute top-0 bottom-0 w-0.5 bg-border/50 z-10"
+                              style={{ left: `${scale(previous)}%` }}
+                            />
+                          )}
+                          
+                          {/* Projected total line */}
+                          {shouldProject && projectedTotal !== current && (
+                            <div 
+                              className="absolute top-0 bottom-0 w-0.5 bg-primary/30 z-10"
+                              style={{ left: `${scale(projectedTotal)}%` }}
+                            />
                           )}
                           
                           {/* Current week progress bar */}
                           <motion.div 
                             className={cn(
-                              "absolute bottom-4 h-6 rounded-r",
+                              "absolute inset-y-0 left-0",
                               previous && current > previous 
-                                ? "bg-gradient-to-t from-primary to-primary/80" 
-                                : "bg-gradient-to-t from-destructive/80 to-destructive/60"
+                                ? "bg-gradient-to-r from-primary/90 to-primary shadow-lg shadow-primary/20" 
+                                : "bg-gradient-to-r from-destructive/80 to-destructive/90 shadow-lg shadow-destructive/20"
                             )}
                             initial={{ width: 0 }}
                             animate={{ width: `${scale(current)}%` }}
                             transition={{ duration: 0.8, ease: "easeInOut" }}
+                          />
+                          
+                          {/* Current value label - positioned outside */}
+                          <div 
+                            className="absolute top-1/2 -translate-y-1/2 transition-all duration-800"
+                            style={{ 
+                              left: `${Math.min(scale(current) + 2, 95)}%`,
+                            }}
                           >
-                            <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-primary-foreground">
+                            <span className="text-[10px] font-bold text-foreground bg-background/90 px-1 py-0.5 rounded backdrop-blur-sm">
                               {formatNumber(current)}
-                            </div>
-                          </motion.div>
+                            </span>
+                          </div>
                         </>
                       )
                     })()}
@@ -428,36 +452,26 @@ const MetricCard = ({
                   </div>
                 </div>
                 
-                {/* Status message */}
-                <div className="text-[10px] text-center">
-                  {(() => {
-                    const lastWeekAtThisPoint = previous ? previous * (weekProgress / 100) : 0
-                    const paceComparison = (lastWeekAtThisPoint > 0) ? 
-                      ((current - lastWeekAtThisPoint) / lastWeekAtThisPoint) * 100 : 
-                      (current > 0 ? 100 : 0)
-                    const projComparison = (previous && previous > 0) ? 
-                      ((projectedTotal - previous) / previous) * 100 : 0
-                    
-                    // Compare projected total vs last week's total (not pace)
-                    if (projComparison > 5) {
-                      return <span className="text-primary font-medium">
-                        🚀 Projecting {formatNumber(projectedTotal)} • {projComparison > 0 ? '+' : ''}{Math.round(projComparison)}% vs last week
-                      </span>
-                    } else if (projComparison > 0) {
-                      return <span className="text-primary">
-                        ↑ Projecting {formatNumber(projectedTotal)} • {projComparison > 0 ? '+' : ''}{Math.round(projComparison)}% vs last week
-                      </span>
-                    } else if (projComparison > -5) {
-                      return <span className="text-muted-foreground">
-                        ↓ Projecting {formatNumber(projectedTotal)} • {Math.round(projComparison)}% vs last week
-                      </span>
-                    } else {
-                      return <span className="text-destructive">
-                        ⚠ Projecting {formatNumber(projectedTotal)} • {Math.round(projComparison)}% vs last week
-                      </span>
-                    }
-                  })()}
-                </div>
+                {/* Status message - Clean & Separated */}
+                {shouldProject && (
+                  <div className="mt-2 px-2 py-1.5 bg-muted/10 rounded-lg border border-border/20">
+                    <div className="text-[11px] text-center">
+                      {(() => {
+                        const projComparison = (previous && previous > 0) ? 
+                          ((projectedTotal - previous) / previous) * 100 : 0
+                        
+                        const icon = projComparison > 5 ? '↑' : projComparison > -5 ? '→' : '↓'
+                        const colorClass = projComparison > 0 ? 'text-primary font-semibold' : projComparison > -5 ? 'text-muted-foreground' : 'text-destructive'
+                        
+                        return (
+                          <span className={colorClass}>
+                            {icon} Projecting {projComparison > 0 ? '+' : ''}{Math.round(projComparison)}% vs last week
+                          </span>
+                        )
+                      })()}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             
