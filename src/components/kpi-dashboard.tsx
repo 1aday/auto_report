@@ -368,97 +368,83 @@ const MetricCard = ({
                       )}>
                         {(() => {
                           const lastWeekAtThisPoint = previous * (weekProgress / 100)
-                          if (lastWeekAtThisPoint === 0) return current > 0 ? "↑ New this week" : "—"
+                          const absDiff = current - lastWeekAtThisPoint
+                          if (lastWeekAtThisPoint === 0) return current > 0 ? `↑ +${formatNumber(current)} (new)` : "—"
                           const pctDiff = ((current - lastWeekAtThisPoint) / lastWeekAtThisPoint) * 100
-                          return `${current > lastWeekAtThisPoint ? "↑" : "↓"} ${Math.abs(Math.round(pctDiff))}% vs pace`
+                          return `${current > lastWeekAtThisPoint ? "↑" : "↓"} ${formatNumber(Math.abs(absDiff))} (${Math.abs(Math.round(pctDiff))}%)`
                         })()}
                       </span>
                     </div>
                   )}
                 </div>
                 
-                {/* The Perfect Progress Bar - Jony Ive Style */}
+                {/* The Perfect Progress Bar - Previous Week as Target */}
                 <div className="space-y-2">
-                  <div className="relative h-12 bg-gradient-to-b from-muted/5 to-muted/10 rounded-lg overflow-hidden">
-                    {/* Week grid structure */}
-                    <div className="absolute inset-0 flex">
-                      {[...Array(7)].map((_, i) => (
-                        <div key={i} className="flex-1 border-r border-border/10 last:border-r-0" />
-                      ))}
-                    </div>
-                    
-                    {/* Time progress indicator - subtle gradient */}
-                    <div 
-                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-muted/20 via-muted/15 to-transparent"
-                      style={{ width: `${weekProgress}%` }}
-                    >
-                      <div className="absolute right-0 top-0 bottom-0 w-px bg-foreground/20" />
-                      <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-background border border-foreground/20" />
-                    </div>
-                    
-                    {/* Last week's value at this time - ghost bar */}
-                    {previous && weekProgress > 0 && (
-                      <div 
-                        className="absolute bottom-0 left-0 h-4 bg-muted/20 rounded-r-sm"
-                        style={{ width: `${Math.min(100, ((previous * (weekProgress / 100)) / (projectedTotal || previous)) * 100)}%` }}
-                      >
-                        <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] text-muted-foreground">
-                          Last week pace
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Current actual value - main bar */}
-                    <motion.div 
-                      className={cn(
-                        "absolute bottom-0 left-0 h-6 rounded-r-sm",
-                        previous && current > (previous * (weekProgress / 100)) 
-                          ? "bg-gradient-to-t from-primary to-primary/80" 
-                          : "bg-gradient-to-t from-destructive/80 to-destructive/60"
-                      )}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.min(100, (current / (projectedTotal || current)) * 100)}%` }}
-                      transition={{ duration: 0.8, ease: "easeInOut" }}
-                    >
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-primary-foreground">
-                        {formatNumber(current)}
-                      </div>
-                    </motion.div>
-                    
-                    {/* Projection extension - dashed */}
-                    {shouldProject && projectedTotal > current && (
-                      <div 
-                        className="absolute bottom-0 h-6 border-2 border-dashed border-primary/30 border-l-0 rounded-r-sm"
-                        style={{ 
-                          left: `${Math.min(100, (current / projectedTotal) * 100)}%`,
-                          width: `${Math.min(100 - (current / projectedTotal) * 100, 100)}%`
-                        }}
-                      />
-                    )}
-                    
-                    {/* Last week final total marker */}
-                    {previous && (
-                      <div 
-                        className="absolute top-0 bottom-0 w-0.5 bg-muted-foreground/40"
-                        style={{ left: `${Math.min(99, (previous / (projectedTotal || previous)) * 100)}%` }}
-                      >
-                        <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[8px] text-muted-foreground whitespace-nowrap">
-                          Last: {formatNumber(previous)}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Projected total marker */}
-                    {shouldProject && (
-                      <div 
-                        className="absolute top-0 bottom-0 w-0.5 bg-primary/60"
-                        style={{ left: `${Math.min(99, 100)}%` }}
-                      >
-                        <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[8px] text-primary whitespace-nowrap font-medium">
-                          Proj: {formatNumber(projectedTotal)}
-                        </div>
-                      </div>
-                    )}
+                  <div className="relative h-14 bg-gradient-to-b from-muted/5 to-muted/10 rounded-lg overflow-hidden">
+                    {/* Scale: Make bar 2x to allow exceeding last week */}
+                    {(() => {
+                      const maxValue = Math.max(previous || 0, projectedTotal, current) * 1.2
+                      const scale = (val: number) => (val / maxValue) * 100
+                      
+                      return (
+                        <>
+                          {/* Last week's total as the target bar */}
+                          {previous && (
+                            <div 
+                              className="absolute top-4 h-6 bg-muted/25 rounded-r"
+                              style={{ width: `${scale(previous)}%` }}
+                            >
+                              <div className="absolute -top-3.5 right-0 text-[9px] text-muted-foreground">
+                                Last week: {formatNumber(previous)}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Current week progress bar */}
+                          <motion.div 
+                            className={cn(
+                              "absolute bottom-4 h-6 rounded-r",
+                              previous && current > previous 
+                                ? "bg-gradient-to-t from-primary to-primary/80" 
+                                : "bg-gradient-to-t from-destructive/80 to-destructive/60"
+                            )}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${scale(current)}%` }}
+                            transition={{ duration: 0.8, ease: "easeInOut" }}
+                          >
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-primary-foreground">
+                              {formatNumber(current)}
+                            </div>
+                          </motion.div>
+                          
+                          {/* Projection extension */}
+                          {shouldProject && projectedTotal > current && (
+                            <div 
+                              className="absolute bottom-4 h-6 border-2 border-dashed border-primary/40 border-l-0 rounded-r"
+                              style={{ 
+                                left: `${scale(current)}%`,
+                                width: `${scale(projectedTotal - current)}%`
+                              }}
+                            >
+                              <div className="absolute -bottom-3.5 right-0 text-[9px] text-primary">
+                                Proj: {formatNumber(projectedTotal)}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Week progress indicator (vertical line) */}
+                          <div 
+                            className="absolute top-0 bottom-0 w-0.5 bg-foreground/30"
+                            style={{ left: `${weekProgress}%` }}
+                          >
+                            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[9px] text-foreground font-medium whitespace-nowrap">
+                              {Math.round(weekProgress)}% of week
+                            </div>
+                            <div className="absolute top-1/2 -translate-y-1/2 -left-1 w-3 h-3 rounded-full bg-background border-2 border-foreground/30" />
+                          </div>
+                        </>
+                      )
+                    })()}
                   </div>
                   
                   {/* Day labels with current day highlight */}
