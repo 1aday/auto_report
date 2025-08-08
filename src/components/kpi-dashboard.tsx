@@ -20,16 +20,6 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table"
-import {
-  Bar,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  ComposedChart,
-  Line,
-} from "recharts"
 import { format } from "date-fns"
 import { motion } from "framer-motion"
 import {
@@ -39,7 +29,6 @@ import {
   UserPlus,
   FileText,
   RefreshCw,
-  Calendar,
   Minus,
   Sparkles,
 } from "lucide-react"
@@ -1010,240 +999,7 @@ const DataTable = ({ data }: { data: WeeklyData[] }) => {
   )
 }
 
-// Chart component with dual axis
-const TrendChart = ({ data }: { data: WeeklyData[] }) => {
-  const chartData = useMemo(() => {
-    // Helper to get ISO week number (Monday start)
-    const getISOWeek = (date: Date) => {
-      const d = new Date(date)
-      d.setHours(0, 0, 0, 0)
-      d.setDate(d.getDate() + 4 - (d.getDay() || 7))
-      const yearStart = new Date(d.getFullYear(), 0, 1)
-      const weekNumber = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
-      return weekNumber
-    }
-    
-    return [...data].reverse().map((item) => ({
-      week: `W${getISOWeek(new Date(item.week_start)).toString().padStart(2, '0')}`,
-      fullDate: format(new Date(item.week_start), "MMM dd"),
-      Sessions: item.sessions,
-      Demos: item.demo_submit,
-      Signups: item.vf_signup,
-    }))
-  }, [data])
-
-  // Custom tooltip with elegant design
-  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ color: string; name: string; value: number }>; label?: string }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-card/95 backdrop-blur-sm p-3 rounded-lg border border-border/50 shadow-xl">
-          <p className="font-semibold text-xs text-foreground mb-2.5">{label}</p>
-          <div className="space-y-1.5">
-            {payload.map((entry: { color: string; name: string; value: number }, index: number) => (
-              <div key={index} className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-2.5 h-2.5 rounded-sm shadow-sm" 
-                    style={{ backgroundColor: entry.color }}
-                  />
-                  <span className="text-[11px] text-muted-foreground font-medium">{entry.name}</span>
-                </div>
-                <span className="text-[11px] font-semibold text-foreground tabular-nums">
-                  {formatNumber(entry.value)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )
-    }
-    return null
-  }
-
-  return (
-    <Card className="overflow-hidden border-0 shadow-sm bg-gradient-to-br from-card to-card/95">
-      <CardHeader className="pb-2 px-6 pt-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-base font-semibold text-foreground">Weekly Performance</CardTitle>
-            <CardDescription className="text-xs text-muted-foreground/80 mt-0.5">
-              Tracking {data.length} weeks of key metrics
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/50">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Live</span>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="px-2 pb-2">
-        <div className="bg-background/50 rounded-lg p-4 backdrop-blur-sm [&_svg]:outline-none [&_svg]:focus:outline-none [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:outline-none">
-          <ResponsiveContainer width="100%" height={320}>
-            <ComposedChart 
-              data={chartData}
-              margin={{ top: 20, right: 55, left: 5, bottom: 5 }}
-              style={{ outline: 'none' }}
-            >
-              <defs>
-                <linearGradient id="sessionsGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#84cc16" stopOpacity={0.9} />
-                  <stop offset="100%" stopColor="#84cc16" stopOpacity={0.5} />
-                </linearGradient>
-              </defs>
-              
-              <CartesianGrid 
-                strokeDasharray="1 4" 
-                stroke="hsl(var(--border))" 
-                strokeOpacity={0.08}
-                vertical={false}
-                horizontalPoints={[0, 50, 100, 150, 200, 250]}
-              />
-              
-              <XAxis 
-                dataKey="week" 
-                tick={{ 
-                  fill: 'hsl(var(--muted-foreground))', 
-                  fontSize: 10,
-                  fontWeight: 500
-                }}
-                axisLine={{ 
-                  stroke: 'hsl(var(--border))', 
-                  strokeOpacity: 0.1,
-                  strokeWidth: 1
-                }}
-                tickLine={false}
-                dy={5}
-              />
-              
-              {/* Left Y-axis for Sessions */}
-              <YAxis 
-                yAxisId="sessions"
-                orientation="left"
-                tick={{ 
-                  fill: 'hsl(var(--muted-foreground))', 
-                  fontSize: 9,
-                  fontWeight: 400
-                }}
-                axisLine={false}
-                tickLine={false}
-                width={48}
-                dx={-5}
-                tickFormatter={(value) => {
-                  if (value === 0) return '0'
-                  if (value >= 1000) return `${(value / 1000).toFixed(1)}k`
-                  return value.toString()
-                }}
-              />
-              
-              {/* Right Y-axis for Conversions */}
-              <YAxis 
-                yAxisId="conversions"
-                orientation="right"
-                tick={{ 
-                  fill: 'hsl(var(--muted-foreground))', 
-                  fontSize: 9,
-                  fontWeight: 400
-                }}
-                axisLine={false}
-                tickLine={false}
-                width={35}
-                dx={5}
-              />
-              
-              <Tooltip 
-                content={<CustomTooltip />}
-                cursor={{ 
-                  fill: 'hsl(var(--muted))', 
-                  fillOpacity: 0.1,
-                  radius: 4
-                }}
-                animationDuration={200}
-              />
-              
-              {/* Sessions as gradient bars */}
-              <Bar
-                yAxisId="sessions"
-                dataKey="Sessions"
-                fill="#84cc16"
-                fillOpacity={0.8}
-                radius={[6, 6, 0, 0]}
-                animationDuration={800}
-                animationBegin={0}
-                maxBarSize={45}
-              />
-              
-              {/* Signups as smooth line */}
-              <Line
-                yAxisId="conversions"
-                type="monotone"
-                dataKey="Signups"
-                stroke="#a855f7"
-                strokeWidth={2.5}
-                dot={{ 
-                  fill: '#a855f7', 
-                  strokeWidth: 0, 
-                  r: 3.5
-                }}
-                activeDot={{ 
-                  r: 5,
-                  strokeWidth: 0,
-                  fill: '#a855f7'
-                }}
-                animationDuration={1000}
-                animationBegin={200}
-              />
-              
-              {/* Demos as smooth line */}
-              <Line
-                yAxisId="conversions"
-                type="monotone"
-                dataKey="Demos"
-                stroke="#3b82f6"
-                strokeWidth={2.5}
-                dot={{ 
-                  fill: '#3b82f6', 
-                  strokeWidth: 0, 
-                  r: 3.5
-                }}
-                activeDot={{ 
-                  r: 5,
-                  strokeWidth: 0,
-                  fill: '#3b82f6'
-                }}
-                animationDuration={1000}
-                animationBegin={400}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-        
-        {/* Elegant legend */}
-        <div className="flex items-center justify-center gap-6 mt-4 px-4">
-          <div className="flex items-center gap-2 group cursor-default">
-            <div className="w-3 h-3 rounded transition-colors" style={{ backgroundColor: '#84cc16' }} />
-            <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-              Sessions
-            </span>
-          </div>
-          <div className="w-px h-3 bg-border/50" />
-          <div className="flex items-center gap-2 group cursor-default">
-            <div className="w-8 h-0.5 rounded-full transition-all" style={{ backgroundColor: '#a855f7aa' }} />
-            <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-              Signups
-            </span>
-          </div>
-          <div className="w-px h-3 bg-border/50" />
-          <div className="flex items-center gap-2 group cursor-default">
-            <div className="w-8 h-0.5 rounded-full transition-all" style={{ backgroundColor: '#3b82f6aa' }} />
-            <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-              Demos
-            </span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
+// TrendChart component removed per user request
 
 export function KPIDashboard() {
   const { data, isLoading, error, refetch } = useWeeklyData()
@@ -1299,27 +1055,16 @@ export function KPIDashboard() {
           </div>
           <Button
             onClick={handleRefresh}
-            variant="outline"
-            size="sm"
             disabled={isRefreshing}
+            className="group"
           >
-            <RefreshCw className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")} />
-            Refresh
+            <RefreshCw className={cn(
+              "h-4 w-4 mr-2 transition-transform",
+              isRefreshing && "animate-spin"
+            )} />
+            {isRefreshing ? "Refreshing..." : "Refresh"}
           </Button>
         </motion.div>
-
-        {/* Latest Week Badge */}
-        {latestWeek && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-          >
-            <Badge variant="outline" className="text-sm py-1.5 px-3">
-              <Calendar className="h-3 w-3 mr-2" />
-              Latest Week: {format(new Date(latestWeek.week_start), "MMM dd, yyyy")}
-            </Badge>
-          </motion.div>
-        )}
 
         {/* Metric Cards */}
         {isLoading ? (
@@ -1369,13 +1114,6 @@ export function KPIDashboard() {
               />
             </div>
           )
-        )}
-
-        {/* Chart */}
-        {isLoading ? (
-          <Skeleton className="h-[400px]" />
-        ) : (
-          data && <TrendChart data={data} />
         )}
 
         {/* Data Table */}
