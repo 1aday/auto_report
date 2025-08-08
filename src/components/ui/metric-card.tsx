@@ -334,7 +334,7 @@ export function StyledMetricCard({
                         
                         return (
                           <span className={colorClass}>
-                            {icon} Projecting {projComparison > 0 ? '+' : ''}{Math.round(projComparison)}% vs last week
+                            {icon} Projecting {projComparison > 0 ? '+' : ''}{projComparison.toFixed(1)}% vs last week
                           </span>
                         )
                       })()}
