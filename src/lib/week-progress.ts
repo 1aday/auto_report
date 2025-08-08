@@ -1,10 +1,13 @@
 /**
- * Calculate the progress of the current week
- * Weeks start on Monday and end on Sunday
+ * Calculate the progress of the current week with hourly precision
+ * Weeks start on Monday at 00:00 EST and end on Sunday at 23:59 EST
  */
 export function calculateWeekProgress(weekStartDate: string | Date): number {
   const start = new Date(weekStartDate)
-  const now = new Date()
+  
+  // Get current time in EST
+  const nowUTC = new Date()
+  const nowEST = new Date(nowUTC.toLocaleString("en-US", {timeZone: "America/New_York"}))
   
   // Ensure the week start is a Monday (if not already)
   // The database should already have Monday as week start, but let's be safe
@@ -15,22 +18,28 @@ export function calculateWeekProgress(weekStartDate: string | Date): number {
     start.setDate(start.getDate() - daysToMonday)
   }
   
-  // Calculate week end (Sunday)
+  // Set start to beginning of Monday in EST
+  start.setHours(0, 0, 0, 0)
+  
+  // Calculate week end (Sunday at 23:59:59 EST)
   const weekEnd = new Date(start)
   weekEnd.setDate(weekEnd.getDate() + 6)
   weekEnd.setHours(23, 59, 59, 999)
   
   // Check if we're in the current week
-  if (now < start || now > weekEnd) {
+  if (nowEST < start || nowEST > weekEnd) {
     return 0 // Not current week
   }
   
-  // Calculate days elapsed (minimum 1 day for better UX)
-  const msElapsed = now.getTime() - start.getTime()
-  const daysElapsed = Math.max(1, Math.ceil(msElapsed / (24 * 60 * 60 * 1000)))
+  // Calculate hours elapsed with precision
+  const msElapsed = nowEST.getTime() - start.getTime()
+  const hoursElapsed = msElapsed / (60 * 60 * 1000)
   
-  // Return percentage (0-100)
-  return Math.min(100, (daysElapsed / 7) * 100)
+  // Total hours in a week = 7 * 24 = 168 hours
+  const totalHoursInWeek = 168
+  
+  // Return percentage (0-100) based on hours
+  return Math.min(100, (hoursElapsed / totalHoursInWeek) * 100)
 }
 
 /**
@@ -56,16 +65,31 @@ export function isCurrentWeek(weekStartDate: string | Date): boolean {
 }
 
 /**
- * Get a descriptive label for the week progress
+ * Get a descriptive label for the week progress with time of day
  */
 export function getWeekProgressLabel(progress: number): string {
   if (progress === 0) return "Week not started"
-  if (progress < 15) return "Monday"
-  if (progress < 30) return "Tuesday"  
-  if (progress < 45) return "Wednesday"
-  if (progress < 60) return "Thursday"
-  if (progress < 75) return "Friday"
-  if (progress < 90) return "Saturday"
-  if (progress >= 90) return "Sunday"
+  
+  // Get current time in EST
+  const nowUTC = new Date()
+  const nowEST = new Date(nowUTC.toLocaleString("en-US", {timeZone: "America/New_York"}))
+  const hour = nowEST.getHours()
+  
+  // Determine time of day
+  let timeOfDay = ""
+  if (hour < 6) timeOfDay = " early morning"
+  else if (hour < 12) timeOfDay = " morning"
+  else if (hour < 17) timeOfDay = " afternoon"
+  else if (hour < 21) timeOfDay = " evening"
+  else timeOfDay = " night"
+  
+  // Determine day based on progress (each day is ~14.3% of week)
+  if (progress < 14.3) return "Monday" + timeOfDay
+  if (progress < 28.6) return "Tuesday" + timeOfDay
+  if (progress < 42.9) return "Wednesday" + timeOfDay
+  if (progress < 57.1) return "Thursday" + timeOfDay
+  if (progress < 71.4) return "Friday" + timeOfDay
+  if (progress < 85.7) return "Saturday" + timeOfDay
+  if (progress >= 85.7) return "Sunday" + timeOfDay
   return "In progress"
 }

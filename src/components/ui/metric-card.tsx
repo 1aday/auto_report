@@ -81,7 +81,7 @@ export function StyledMetricCard({
   
   // Calculate projection if current week OR if this is the latest week with data
   // (data might be slightly behind real-time)
-  const todayName = new Date().toLocaleDateString('en-US', { weekday: 'long' })
+  const todayName = new Date().toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/New_York' })
   const twoWeeksAgo = new Date()
   twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14)
   const shouldProject = isCurrentWeek || (weekStart && new Date(weekStart) > twoWeeksAgo)

@@ -241,15 +241,15 @@ const MetricCard = ({
   // (The vs12WeekPct is already passed as a prop)
   
   // Projection based on weekday multipliers
-  const now = new Date()
-  const todayName = now.toLocaleDateString('en-US', { weekday: 'long' })
-  // Show projections for current week OR recent weeks (within 14 days)
-  const twoWeeksAgo = new Date()
-  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14)
-  const shouldProject = isCurrentWeek || (weekStart && new Date(weekStart) > twoWeeksAgo)
-  const projectedTotal = shouldProject
-    ? predictWeeklyTotal(current, todayName)
-    : current
+      const now = new Date()
+    const todayName = now.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/New_York' })
+    // Show projections for current week OR recent weeks (within 14 days)
+    const twoWeeksAgo = new Date()
+    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14)
+    const shouldProject = isCurrentWeek || (weekStart && new Date(weekStart) > twoWeeksAgo)
+    const projectedTotal = shouldProject
+      ? predictWeeklyTotal(current, todayName)
+      : current
   
     // Calculate projected comparisons
   const projectedVsPrev = shouldProject && previous
