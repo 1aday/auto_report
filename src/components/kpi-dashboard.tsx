@@ -216,9 +216,9 @@ const MetricCard = ({
   color?: string
 }) => {
   const colorClasses = {
-    primary: "from-primary/10 to-primary/5 border-primary/20",
-    blue: "from-blue-500/10 to-blue-500/5 border-blue-500/20",
-    purple: "from-purple-500/10 to-purple-500/5 border-purple-500/20",
+    primary: "from-primary/20 to-primary/10 border-primary/30",
+    blue: "from-blue-500/20 to-blue-500/10 border-blue-500/30",
+    purple: "from-purple-500/20 to-purple-500/10 border-purple-500/30",
   }
 
   // Calculate week progress using utility function

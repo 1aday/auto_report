@@ -429,7 +429,7 @@ export function DrillDownDashboard() {
             // Show skeleton cards while loading
             return (
               <>
-                <Card className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-primary/5 to-background">
+                <Card className="relative overflow-hidden bg-gradient-to-br from-primary/20 via-primary/10 to-background">
                   <CardHeader className="pb-2">
                     <Skeleton className="h-4 w-20" />
                   </CardHeader>
@@ -438,7 +438,7 @@ export function DrillDownDashboard() {
                     <Skeleton className="h-3 w-32" />
                   </CardContent>
                 </Card>
-                <Card className="relative overflow-hidden bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-background">
+                <Card className="relative overflow-hidden bg-gradient-to-br from-purple-500/20 via-purple-500/10 to-background">
                   <CardHeader className="pb-2">
                     <Skeleton className="h-4 w-20" />
                   </CardHeader>
@@ -447,7 +447,7 @@ export function DrillDownDashboard() {
                     <Skeleton className="h-3 w-32" />
                   </CardContent>
                 </Card>
-                <Card className="relative overflow-hidden bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-background">
+                <Card className="relative overflow-hidden bg-gradient-to-br from-blue-500/20 via-blue-500/10 to-background">
                   <CardHeader className="pb-2">
                     <Skeleton className="h-4 w-20" />
                   </CardHeader>
