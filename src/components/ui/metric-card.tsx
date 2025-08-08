@@ -181,7 +181,8 @@ export function StyledMetricCard({
             </div>
             
             {(showProgress || shouldProject) && (
-              <div className="space-y-1 mt-2">
+              <div className="mt-3 space-y-2">
+                {/* Progress header */}
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-muted-foreground">
                     {getWeekProgressLabel(progressValue > 0 ? progressValue : 50)}
@@ -191,28 +192,106 @@ export function StyledMetricCard({
                   </span>
                 </div>
                 
-                {/* Simple progress bar */}
-                <div className="relative h-2 bg-muted/20 rounded-full overflow-hidden">
-                  {/* Current week progress */}
-                  <motion.div 
-                    className="absolute inset-y-0 left-0 bg-primary rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progressValue > 0 ? Math.min(progressValue, 100) : 0}%` }}
-                    transition={{ duration: 0.8, ease: "easeInOut" }}
-                  />
+                {/* Visual progress system */}
+                <div className="space-y-1.5">
+                  {/* Time progress bar */}
+                  <div className="space-y-0.5">
+                    <div className="flex justify-between text-[9px] text-muted-foreground">
+                      <span>Week progress</span>
+                      <span>{Math.round(progressValue)}%</span>
+                    </div>
+                    <div className="relative h-3 bg-muted/10 rounded-sm overflow-hidden border border-border/50">
+                      <motion.div 
+                        className="absolute inset-y-0 left-0 bg-muted/40"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progressValue > 0 ? Math.min(progressValue, 100) : 0}%` }}
+                        transition={{ duration: 0.8, ease: "easeInOut" }}
+                      />
+                      {/* Current time marker */}
+                      <div 
+                        className="absolute top-0 bottom-0 w-0.5 bg-foreground/60"
+                        style={{ left: `${Math.min(99.5, progressValue)}%` }}
+                      />
+                    </div>
+                  </div>
                   
-                  {/* Last week marker (subtle) */}
-                  {previousValue && projectedTotal > 0 && (
-                    <div 
-                      className="absolute top-0 bottom-0 w-0.5 bg-background/60"
-                      style={{ left: `${Math.min(100, (previousValue / projectedTotal) * 100)}%` }}
-                    />
-                  )}
+                  {/* Metric performance bar */}
+                  <div className="space-y-0.5">
+                    <div className="flex justify-between text-[9px] text-muted-foreground">
+                      <span>Performance vs last week</span>
+                      <span>{formatNumber(value)} / {formatNumber(projectedTotal)}</span>
+                    </div>
+                    <div className="relative h-3 bg-muted/10 rounded-sm overflow-hidden border border-border/50">
+                      {/* Last week's pace at this point */}
+                      {previousValue && progressValue > 0 && (
+                        <div 
+                          className="absolute inset-y-0 left-0 bg-muted/20 border-r border-muted/40"
+                          style={{ width: `${Math.min(100, (previousValue * (progressValue / 100)) / (projectedTotal || 1) * 100)}%` }}
+                        />
+                      )}
+                      
+                      {/* Current actual */}
+                      <motion.div 
+                        className="absolute inset-y-0 left-0 bg-primary/80"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min(100, (value / (projectedTotal || value)) * 100)}%` }}
+                        transition={{ duration: 0.8, ease: "easeInOut" }}
+                      />
+                      
+                      {/* Projected total */}
+                      {shouldProject && projectedTotal > value && (
+                        <>
+                          <motion.div 
+                            className="absolute inset-y-0 bg-primary/30 border-l-2 border-dashed border-primary/50"
+                            initial={{ left: `${(value / projectedTotal) * 100}%`, right: '0%' }}
+                            animate={{ 
+                              left: `${Math.min(100, (value / projectedTotal) * 100)}%`,
+                              right: '0%'
+                            }}
+                            transition={{ duration: 0.8, ease: "easeInOut", delay: 0.2 }}
+                          />
+                          <div 
+                            className="absolute top-0 bottom-0 w-0.5 bg-primary"
+                            style={{ left: `${Math.min(99.5, 100)}%` }}
+                          />
+                        </>
+                      )}
+                      
+                      {/* Last week total marker */}
+                      {previousValue && (
+                        <div 
+                          className="absolute -top-1 -bottom-1 w-0.5 bg-muted-foreground/50"
+                          style={{ left: `${Math.min(99.5, (previousValue / (projectedTotal || previousValue)) * 100)}%` }}
+                          title="Last week total"
+                        />
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Legend */}
+                  <div className="flex items-center gap-3 text-[9px]">
+                    <span className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-primary/80 rounded-sm" />
+                      <span className="text-muted-foreground">Actual</span>
+                    </span>
+                    {shouldProject && (
+                      <span className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-primary/30 border border-primary/50 rounded-sm" />
+                        <span className="text-muted-foreground">Projected</span>
+                      </span>
+                    )}
+                    {previousValue && (
+                      <span className="flex items-center gap-1">
+                        <div className="w-0.5 h-2 bg-muted-foreground/50" />
+                        <span className="text-muted-foreground">Last week</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
                 
-                {/* Pacing info */}
+                {/* Projection text */}
                 {shouldProject && projectedTotal !== value && (
-                  <div className="text-[10px] text-muted-foreground">
+                  <div className="text-[10px] text-muted-foreground pt-1 border-t border-border/30">
                     Projecting {formatNumber(projectedTotal)} by end of week
                     {previousValue && projectedTotal > previousValue && 
                       <span className="text-primary ml-1">(+{Math.round(((projectedTotal - previousValue) / previousValue) * 100)}% vs last week)</span>
