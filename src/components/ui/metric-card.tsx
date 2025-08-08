@@ -230,10 +230,10 @@ export function StyledMetricCard({
                           {/* Last week's total as the target bar */}
                           {previousValue && (
                             <div 
-                              className="absolute top-4 h-6 bg-muted/25 rounded-r"
+                              className="absolute top-4 h-6 bg-muted/50 rounded-r border border-muted/30"
                               style={{ width: `${scale(previousValue)}%` }}
                             >
-                              <div className="absolute -top-3.5 right-0 text-[9px] text-muted-foreground">
+                              <div className="absolute -top-3.5 right-0 text-[9px] text-muted-foreground font-medium">
                                 Last week: {formatNumber(previousValue)}
                               </div>
                             </div>
