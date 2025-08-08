@@ -420,17 +420,6 @@ const MetricCard = ({
                               </div>
                             </div>
                           )}
-                          
-                          {/* Week progress indicator (vertical line) */}
-                          <div 
-                            className="absolute top-0 bottom-0 w-0.5 bg-foreground/30"
-                            style={{ left: `${weekProgress}%` }}
-                          >
-                            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[9px] text-foreground font-medium whitespace-nowrap">
-                              {Math.round(weekProgress)}% of week
-                            </div>
-                            <div className="absolute top-1/2 -translate-y-1/2 -left-1 w-3 h-3 rounded-full bg-background border-2 border-foreground/30" />
-                          </div>
                         </>
                       )
                     })()}
