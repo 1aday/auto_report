@@ -33,17 +33,16 @@ function getCumulativeHourlyProgress(hour: number): number {
 /**
  * Predicts the total for the entire week based on cumulative progress with hourly precision
  * @param cumulativeSoFar - The cumulative value up to now
- * @param day - The current day of the week (defaults to today in EST)
+ * @param day - The current day of the week (defaults to today)
  * @returns Projected total for the entire week
  */
 export function predictWeeklyTotal(
   cumulativeSoFar: number,
-  day: string = new Date().toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/New_York' }),
+  day: string = new Date().toLocaleDateString('en-US', { weekday: 'long' }),
 ): number {
-  // Get current time in EST
-  const nowUTC = new Date();
-  const nowEST = new Date(nowUTC.toLocaleString("en-US", {timeZone: "America/New_York"}));
-  const currentHour = nowEST.getHours();
+  // Get current time
+  const now = new Date();
+  const currentHour = now.getHours();
   const currentDay = day;
   
   // Get the cumulative percentage of the week completed

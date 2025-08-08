@@ -1,13 +1,10 @@
 /**
  * Calculate the progress of the current week with hourly precision
- * Weeks start on Monday at 00:00 EST and end on Sunday at 23:59 EST
+ * Weeks start on Monday at 00:00 and end on Sunday at 23:59
  */
 export function calculateWeekProgress(weekStartDate: string | Date): number {
   const start = new Date(weekStartDate)
-  
-  // Get current time in EST
-  const nowUTC = new Date()
-  const nowEST = new Date(nowUTC.toLocaleString("en-US", {timeZone: "America/New_York"}))
+  const now = new Date()
   
   // Ensure the week start is a Monday (if not already)
   // The database should already have Monday as week start, but let's be safe
@@ -18,21 +15,21 @@ export function calculateWeekProgress(weekStartDate: string | Date): number {
     start.setDate(start.getDate() - daysToMonday)
   }
   
-  // Set start to beginning of Monday in EST
+  // Set start to beginning of Monday
   start.setHours(0, 0, 0, 0)
   
-  // Calculate week end (Sunday at 23:59:59 EST)
+  // Calculate week end (Sunday at 23:59:59)
   const weekEnd = new Date(start)
   weekEnd.setDate(weekEnd.getDate() + 6)
   weekEnd.setHours(23, 59, 59, 999)
   
   // Check if we're in the current week
-  if (nowEST < start || nowEST > weekEnd) {
+  if (now < start || now > weekEnd) {
     return 0 // Not current week
   }
   
   // Calculate hours elapsed with precision
-  const msElapsed = nowEST.getTime() - start.getTime()
+  const msElapsed = now.getTime() - start.getTime()
   const hoursElapsed = msElapsed / (60 * 60 * 1000)
   
   // Total hours in a week = 7 * 24 = 168 hours
@@ -70,10 +67,8 @@ export function isCurrentWeek(weekStartDate: string | Date): boolean {
 export function getWeekProgressLabel(progress: number): string {
   if (progress === 0) return "Week not started"
   
-  // Get current time in EST
-  const nowUTC = new Date()
-  const nowEST = new Date(nowUTC.toLocaleString("en-US", {timeZone: "America/New_York"}))
-  const hour = nowEST.getHours()
+  const now = new Date()
+  const hour = now.getHours()
   
   // Determine time of day
   let timeOfDay = ""
