@@ -332,7 +332,10 @@ const MetricCard = ({
               </div>
               {shouldProject && (
                 <div className="text-xs text-muted-foreground mt-1">
-                  {todayName} ({Math.round((weekProgress * 7) / 100) || 7}/7 days) • 
+                  {weekProgress === 100 ? 
+                    <>Week complete (7/7 days)</> :
+                    <>{todayName} ({Math.max(1, Math.round((weekProgress * 7) / 100))}/7 days)</>
+                  } • 
                   Projected: <span className="font-medium text-foreground">{formatNumber(projectedTotal)}</span>
                 </div>
               )}
