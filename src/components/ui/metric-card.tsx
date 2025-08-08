@@ -219,7 +219,7 @@ export function StyledMetricCard({
                 
                 {/* The Perfect Progress Bar - Previous Week as Target */}
                 <div className="space-y-2">
-                  <div className="relative h-14 bg-gradient-to-b from-muted/5 to-muted/10 rounded-lg overflow-hidden">
+                  <div className="relative h-14 bg-muted/40 dark:bg-muted/30 rounded-lg overflow-hidden border border-border/50">
                     {/* Scale: Make bar 2x to allow exceeding last week */}
                     {(() => {
                       const maxValue = Math.max(previousValue || 0, projectedTotal, value) * 1.2
