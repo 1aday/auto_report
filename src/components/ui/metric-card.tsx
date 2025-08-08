@@ -152,7 +152,7 @@ export function StyledMetricCard({
       transition={{ duration: 0.3 }}
     >
       <Card className={cn("relative overflow-hidden", `bg-gradient-to-br ${colorClasses[color]}`)}>
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-1">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {title}
@@ -162,7 +162,7 @@ export function StyledMetricCard({
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-2">
           <div className="space-y-3">
             <div>
               <div className="text-3xl font-bold tabular-nums">
