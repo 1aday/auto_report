@@ -392,7 +392,7 @@ const MetricCard = ({
                           {/* Last week's total bar - grey background reference */}
                           {previous && (
                             <div 
-                              className="absolute inset-y-[25%] left-0 bg-muted/50 rounded-r"
+                              className="absolute inset-y-[25%] left-0 bg-slate-400/30 dark:bg-slate-600/40 rounded-r border border-slate-300/20 dark:border-slate-600/30"
                               style={{ width: `${scale(previous)}%` }}
                             />
                           )}
