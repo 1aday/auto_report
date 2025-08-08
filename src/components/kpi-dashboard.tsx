@@ -863,24 +863,24 @@ const DataTable = ({ data }: { data: WeeklyData[] }) => {
         <table className="w-full">
           <thead>
             {/* Header grouping row */}
-            <tr className="border-b border-border/50">
-              <th className="px-3 py-1.5"></th>
-              <th colSpan={4} className="px-2 py-1.5 text-center bg-primary/5 border-x border-border/30">
+            <tr className="border-b border-border/20">
+              <th className="px-3 py-1.5 border-r border-border/10"></th>
+              <th colSpan={4} className="px-2 py-1.5 text-center bg-primary/5 border-r border-border/20">
                 <span className="text-xs font-semibold uppercase tracking-wider text-primary">Sessions</span>
               </th>
-              <th colSpan={4} className="px-2 py-1.5 text-center bg-purple-500/5 border-x border-border/30">
+              <th colSpan={4} className="px-2 py-1.5 text-center bg-purple-500/5 border-r border-border/20">
                 <span className="text-xs font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400">Signups</span>
               </th>
-              <th colSpan={4} className="px-2 py-1.5 text-center bg-blue-500/5 border-x border-border/30">
+              <th colSpan={4} className="px-2 py-1.5 text-center bg-blue-500/5 border-r border-border/20">
                 <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">Demos</span>
               </th>
-              <th colSpan={2} className="px-2 py-1.5 text-center bg-emerald-500/5 border-x border-border/30">
+              <th colSpan={2} className="px-2 py-1.5 text-center bg-emerald-500/5">
                 <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Conversions</span>
               </th>
             </tr>
             {/* Column headers */}
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="border-b bg-muted/30">
+              <tr key={headerGroup.id} className="border-b bg-muted/20">
                 {headerGroup.headers.map((header, idx) => {
                   const isFirstColumn = idx === 0
                   const isSessionsGroup = idx >= 1 && idx <= 4
@@ -893,12 +893,15 @@ const DataTable = ({ data }: { data: WeeklyData[] }) => {
                       key={header.id}
                       className={cn(
                         isFirstColumn ? "px-3 py-2.5 text-left font-medium text-xs" : "px-2 py-1.5 text-left font-medium text-xs",
-                        isFirstColumn && "sticky left-0 bg-background z-10 border-r border-border/50",
-                        isSessionsGroup && "bg-primary/5",
-                        isSignupsGroup && "bg-purple-500/5",
-                        isDemosGroup && "bg-blue-500/5",
+                        isFirstColumn && "border-r border-border/10",
+                        isSessionsGroup && "bg-primary/5 border-r border-border/10",
+                        isSignupsGroup && "bg-purple-500/5 border-r border-border/10",
+                        isDemosGroup && "bg-blue-500/5 border-r border-border/10",
                         isConversionsGroup && "bg-emerald-500/5",
-                        (idx === 4 || idx === 8 || idx === 12) && "border-r border-border/30"
+                        idx === 4 && "border-r border-border/20",
+                        idx === 8 && "border-r border-border/20",
+                        idx === 12 && "border-r border-border/20",
+                        idx === 13 && "border-r border-border/10"
                       )}
                     >
                       {header.isPlaceholder
@@ -919,9 +922,9 @@ const DataTable = ({ data }: { data: WeeklyData[] }) => {
                 <tr
                   key={row.id}
                   className={cn(
-                    "border-b border-border/30",
-                    index % 2 === 0 ? "bg-background" : "bg-muted/10",
-                    index === 0 && "font-semibold bg-primary/8 border-b-2 border-primary/20"
+                    "border-b border-border/20",
+                    index % 2 === 0 ? "bg-background" : "bg-muted/5",
+                    index === 0 && "font-semibold bg-primary/5"
                   )}
                 >
                   {row.getVisibleCells().map((cell, idx) => {
@@ -936,16 +939,12 @@ const DataTable = ({ data }: { data: WeeklyData[] }) => {
                         key={cell.id} 
                         className={cn(
                           isFirstColumn ? "px-3 py-2.5" : "px-2 py-1.5",
-                          isFirstColumn && "sticky left-0 bg-inherit z-10 border-r border-border/50",
-                          isSessionsGroup && index % 2 === 0 && "bg-primary/3",
-                          isSessionsGroup && index % 2 === 1 && "bg-primary/5",
-                          isSignupsGroup && index % 2 === 0 && "bg-purple-500/3",
-                          isSignupsGroup && index % 2 === 1 && "bg-purple-500/5",
-                          isDemosGroup && index % 2 === 0 && "bg-blue-500/3",
-                          isDemosGroup && index % 2 === 1 && "bg-blue-500/5",
-                          isConversionsGroup && index % 2 === 0 && "bg-emerald-500/3",
-                          isConversionsGroup && index % 2 === 1 && "bg-emerald-500/5",
-                          (idx === 4 || idx === 8 || idx === 12) && "border-r border-border/30"
+                          isFirstColumn && "border-r border-border/10",
+                          !isFirstColumn && "border-r border-border/10",
+                          idx === 4 && "border-r border-border/20",
+                          idx === 8 && "border-r border-border/20",
+                          idx === 12 && "border-r border-border/20",
+                          idx === 14 && "border-r-0"
                         )}
                       >
                         {flexRender(
