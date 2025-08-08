@@ -3,7 +3,16 @@
  * Weeks start on Monday at 00:00 and end on Sunday at 23:59
  */
 export function calculateWeekProgress(weekStartDate: string | Date): number {
-  const start = new Date(weekStartDate)
+  // Handle date string properly to avoid timezone issues
+  // When given YYYY-MM-DD format, ensure it's treated as local date
+  let start: Date
+  if (typeof weekStartDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(weekStartDate)) {
+    // For YYYY-MM-DD format, append time to ensure local timezone interpretation
+    start = new Date(weekStartDate + 'T00:00:00')
+  } else {
+    start = new Date(weekStartDate)
+  }
+  
   const now = new Date()
   
   // Ensure the week start is a Monday (if not already)
@@ -48,7 +57,15 @@ export function calculateWeekProgress(weekStartDate: string | Date): number {
  * Check if a given week is the current week
  */
 export function isCurrentWeek(weekStartDate: string | Date): boolean {
-  const start = new Date(weekStartDate)
+  // Handle date string properly to avoid timezone issues
+  let start: Date
+  if (typeof weekStartDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(weekStartDate)) {
+    // For YYYY-MM-DD format, append time to ensure local timezone interpretation
+    start = new Date(weekStartDate + 'T00:00:00')
+  } else {
+    start = new Date(weekStartDate)
+  }
+  
   const now = new Date()
   
   // Ensure the week start is a Monday
