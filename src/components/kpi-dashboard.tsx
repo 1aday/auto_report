@@ -405,21 +405,6 @@ const MetricCard = ({
                               {formatNumber(current)}
                             </div>
                           </motion.div>
-                          
-                          {/* Projection extension */}
-                          {shouldProject && projectedTotal > current && (
-                            <div 
-                              className="absolute bottom-4 h-6 border-2 border-dashed border-primary/40 border-l-0 rounded-r"
-                              style={{ 
-                                left: `${scale(current)}%`,
-                                width: `${scale(projectedTotal - current)}%`
-                              }}
-                            >
-                              <div className="absolute -bottom-3.5 right-0 text-[9px] text-primary">
-                                Proj: {formatNumber(projectedTotal)}
-                              </div>
-                            </div>
-                          )}
                         </>
                       )
                     })()}
