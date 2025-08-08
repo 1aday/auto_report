@@ -339,94 +339,164 @@ const MetricCard = ({
             </div>
             
             {(isCurrentWeek || shouldProject) && (
-              <div className="mt-3 space-y-2">
-                {/* Progress header */}
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground">
-                    {weekProgressLabel}
-                  </span>
-                  <span className="font-medium text-foreground">
-                    {weekProgress > 0 && weekProgress < 100 ? `${Math.round(weekProgress)}% complete` : weekProgress >= 100 ? 'Week complete' : 'Projected'}
-                  </span>
+              <div className="mt-3 space-y-3">
+                {/* Progress header with key metrics */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-muted-foreground">
+                      {weekProgressLabel}
+                    </span>
+                    <span className="font-medium text-foreground">
+                      Week {Math.round(weekProgress)}% complete
+                    </span>
+                  </div>
+                  
+                  {/* Key comparison metrics */}
+                  {previous && (
+                    <div className="flex justify-between text-[10px] text-muted-foreground">
+                      <span>
+                        At this point last week: {formatNumber(previous * (weekProgress / 100))}
+                      </span>
+                      <span className={cn(
+                        "font-medium",
+                        current > previous * (weekProgress / 100) ? "text-primary" : "text-destructive"
+                      )}>
+                        {current > previous * (weekProgress / 100) ? "↑" : "↓"} 
+                        {Math.abs(Math.round(((current - (previous * (weekProgress / 100))) / (previous * (weekProgress / 100))) * 100))}% vs pace
+                      </span>
+                    </div>
+                  )}
                 </div>
                 
-                {/* Single combined progress bar */}
-                <div className="space-y-1">
-                  <div className="relative h-8 bg-muted/5 rounded overflow-hidden border border-border/40">
-                    {/* Week timeline background */}
+                {/* The Perfect Progress Bar - Jony Ive Style */}
+                <div className="space-y-2">
+                  <div className="relative h-12 bg-gradient-to-b from-muted/5 to-muted/10 rounded-lg overflow-hidden">
+                    {/* Week grid structure */}
                     <div className="absolute inset-0 flex">
                       {[...Array(7)].map((_, i) => (
-                        <div key={i} className="flex-1 border-r border-border/20 last:border-r-0" />
+                        <div key={i} className="flex-1 border-r border-border/10 last:border-r-0" />
                       ))}
                     </div>
                     
-                    {/* Time elapsed overlay */}
+                    {/* Time progress indicator - subtle gradient */}
                     <div 
-                      className="absolute inset-y-0 left-0 bg-muted/15"
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-muted/20 via-muted/15 to-transparent"
                       style={{ width: `${weekProgress}%` }}
-                    />
+                    >
+                      <div className="absolute right-0 top-0 bottom-0 w-px bg-foreground/20" />
+                      <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-background border border-foreground/20" />
+                    </div>
                     
-                    {/* Last week's total line */}
-                    {previous && projectedTotal > 0 && (
+                    {/* Last week's value at this time - ghost bar */}
+                    {previous && weekProgress > 0 && (
                       <div 
-                        className="absolute top-0 bottom-0 w-1 bg-muted-foreground/30"
-                        style={{ left: `${Math.min(98, (previous / projectedTotal) * 100)}%` }}
+                        className="absolute bottom-0 left-0 h-4 bg-muted/20 rounded-r-sm"
+                        style={{ width: `${Math.min(100, ((previous * (weekProgress / 100)) / (projectedTotal || previous)) * 100)}%` }}
                       >
-                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-[9px] text-muted-foreground whitespace-nowrap">
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] text-muted-foreground">
+                          Last week pace
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Current actual value - main bar */}
+                    <motion.div 
+                      className={cn(
+                        "absolute bottom-0 left-0 h-6 rounded-r-sm",
+                        previous && current > (previous * (weekProgress / 100)) 
+                          ? "bg-gradient-to-t from-primary to-primary/80" 
+                          : "bg-gradient-to-t from-destructive/80 to-destructive/60"
+                      )}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min(100, (current / (projectedTotal || current)) * 100)}%` }}
+                      transition={{ duration: 0.8, ease: "easeInOut" }}
+                    >
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-primary-foreground">
+                        {formatNumber(current)}
+                      </div>
+                    </motion.div>
+                    
+                    {/* Projection extension - dashed */}
+                    {shouldProject && projectedTotal > current && (
+                      <div 
+                        className="absolute bottom-0 h-6 border-2 border-dashed border-primary/30 border-l-0 rounded-r-sm"
+                        style={{ 
+                          left: `${Math.min(100, (current / projectedTotal) * 100)}%`,
+                          width: `${Math.min(100 - (current / projectedTotal) * 100, 100)}%`
+                        }}
+                      />
+                    )}
+                    
+                    {/* Last week final total marker */}
+                    {previous && (
+                      <div 
+                        className="absolute top-0 bottom-0 w-0.5 bg-muted-foreground/40"
+                        style={{ left: `${Math.min(99, (previous / (projectedTotal || previous)) * 100)}%` }}
+                      >
+                        <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[8px] text-muted-foreground whitespace-nowrap">
                           Last: {formatNumber(previous)}
                         </div>
                       </div>
                     )}
                     
-                    {/* Current value bar */}
-                    <motion.div 
-                      className="absolute bottom-0 left-0 h-3 bg-primary rounded-r"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.min(100, (current / (projectedTotal || current)) * 100)}%` }}
-                      transition={{ duration: 0.8, ease: "easeInOut" }}
-                    >
-                      <div className="absolute -top-4 right-0 text-[9px] text-primary font-medium whitespace-nowrap">
-                        {formatNumber(current)}
-                      </div>
-                    </motion.div>
-                    
-                    {/* Projected end marker */}
-                    {shouldProject && projectedTotal > current && (
+                    {/* Projected total marker */}
+                    {shouldProject && (
                       <div 
-                        className="absolute top-0 bottom-0 w-1 bg-primary/40"
-                        style={{ left: `${Math.min(98, 100)}%` }}
+                        className="absolute top-0 bottom-0 w-0.5 bg-primary/60"
+                        style={{ left: `${Math.min(99, 100)}%` }}
                       >
-                        <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] text-primary whitespace-nowrap">
+                        <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[8px] text-primary whitespace-nowrap font-medium">
                           Proj: {formatNumber(projectedTotal)}
                         </div>
                       </div>
                     )}
                   </div>
                   
-                  {/* Day labels */}
-                  <div className="flex text-[9px] text-muted-foreground">
-                    <div className="flex-1 text-center">Mon</div>
-                    <div className="flex-1 text-center">Tue</div>
-                    <div className="flex-1 text-center">Wed</div>
-                    <div className="flex-1 text-center">Thu</div>
-                    <div className="flex-1 text-center">Fri</div>
-                    <div className="flex-1 text-center">Sat</div>
-                    <div className="flex-1 text-center">Sun</div>
+                  {/* Day labels with current day highlight */}
+                  <div className="flex text-[9px]">
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => (
+                      <div 
+                        key={day} 
+                        className={cn(
+                          "flex-1 text-center transition-colors",
+                          i < Math.floor(weekProgress / 14.3) ? "text-muted-foreground" :
+                          i === Math.floor(weekProgress / 14.3) ? "text-foreground font-medium" :
+                          "text-muted-foreground/50"
+                        )}
+                      >
+                        {day}
+                      </div>
+                    ))}
                   </div>
                 </div>
                 
-                {/* Projection text */}
-                {shouldProject && projectedTotal !== current && (
-                  <div className="text-[10px] text-muted-foreground">
-                    Projecting {formatNumber(projectedTotal)} by end of week
-                    {previous && projectedTotal > previous && 
-                      <span className="text-primary ml-1">(+{Math.round(((projectedTotal - previous) / previous) * 100)}% vs last week)</span>
+                {/* Status message */}
+                <div className="text-[10px] text-center">
+                  {(() => {
+                    const paceComparison = previous ? 
+                      ((current - (previous * (weekProgress / 100))) / (previous * (weekProgress / 100))) * 100 : 0
+                    const projComparison = previous ? 
+                      ((projectedTotal - previous) / previous) * 100 : 0
+                    
+                    if (paceComparison > 10) {
+                      return <span className="text-primary font-medium">
+                        🚀 Significantly ahead of last week&apos;s pace • Projecting {formatNumber(projectedTotal)} ({projComparison > 0 ? '+' : ''}{Math.round(projComparison)}%)
+                      </span>
+                    } else if (paceComparison > 0) {
+                      return <span className="text-primary">
+                        ↑ Ahead of last week&apos;s pace • Projecting {formatNumber(projectedTotal)} ({projComparison > 0 ? '+' : ''}{Math.round(projComparison)}%)
+                      </span>
+                    } else if (paceComparison > -10) {
+                      return <span className="text-muted-foreground">
+                        ↓ Slightly behind pace • Projecting {formatNumber(projectedTotal)} ({Math.round(projComparison)}%)
+                      </span>
+                    } else {
+                      return <span className="text-destructive">
+                        ⚠ Behind last week&apos;s pace • Projecting {formatNumber(projectedTotal)} ({Math.round(projComparison)}%)
+                      </span>
                     }
-                    {previous && projectedTotal < previous && 
-                      <span className="text-destructive ml-1">({Math.round(((projectedTotal - previous) / previous) * 100)}% vs last week)</span>
-                    }
-                  </div>
-                )}
+                  })()}
+                </div>
               </div>
             )}
             
