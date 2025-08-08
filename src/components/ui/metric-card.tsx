@@ -268,6 +268,18 @@ export function StyledMetricCard({
                             transition={{ duration: 0.8, ease: "easeInOut" }}
                           />
                           
+                          {/* Dotted projection extension */}
+                          {shouldProject && projectedTotal > value && (
+                            <div 
+                              className="absolute top-[25%] bottom-[25%] border-2 border-dashed border-primary/40 rounded-r"
+                              style={{ 
+                                left: `${scale(value)}%`,
+                                width: `${scale(projectedTotal - value)}%`,
+                                borderLeft: 'none'
+                              }}
+                            />
+                          )}
+                          
                           {/* Current value label - positioned outside */}
                           <div 
                             className="absolute top-1/2 -translate-y-1/2 transition-all duration-800"

@@ -418,6 +418,18 @@ const MetricCard = ({
                             transition={{ duration: 0.8, ease: "easeInOut" }}
                           />
                           
+                          {/* Dotted projection extension */}
+                          {shouldProject && projectedTotal > current && (
+                            <div 
+                              className="absolute top-[25%] bottom-[25%] border-2 border-dashed border-primary/40 rounded-r"
+                              style={{ 
+                                left: `${scale(current)}%`,
+                                width: `${scale(projectedTotal - current)}%`,
+                                borderLeft: 'none'
+                              }}
+                            />
+                          )}
+                          
                           {/* Current value label - positioned outside */}
                           <div 
                             className="absolute top-1/2 -translate-y-1/2 transition-all duration-800"
