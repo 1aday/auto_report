@@ -473,14 +473,14 @@ const MetricCard = ({
                 
                 {/* Status message - Clean & Separated */}
                 {shouldProject && (
-                  <div className="mt-2 px-2 py-1.5 bg-muted/10 rounded-lg border border-border/20">
+                  <div className="mt-2 px-2 py-1.5 bg-background/80 backdrop-blur-sm rounded-lg border border-border/30">
                     <div className="text-[11px] text-center">
                       {(() => {
                         const projComparison = (previous && previous > 0) ? 
                           ((projectedTotal - previous) / previous) * 100 : 0
                         
                         const icon = projComparison > 5 ? '↑' : projComparison > -5 ? '→' : '↓'
-                        const colorClass = projComparison > 0 ? 'text-primary font-semibold' : projComparison > -5 ? 'text-muted-foreground' : 'text-destructive'
+                        const colorClass = projComparison > 0 ? 'text-primary font-semibold' : projComparison > -5 ? 'text-muted-foreground' : 'text-destructive font-medium'
                         
                         return (
                           <span className={colorClass}>
