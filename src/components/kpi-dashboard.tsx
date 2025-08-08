@@ -389,26 +389,18 @@ const MetricCard = ({
                       
                       return (
                         <>
-                          {/* Last week's reference line */}
+                          {/* Last week's total bar - grey background reference */}
                           {previous && (
                             <div 
-                              className="absolute top-0 bottom-0 w-0.5 bg-border/50 z-10"
-                              style={{ left: `${scale(previous)}%` }}
+                              className="absolute inset-y-[25%] left-0 bg-muted/50 rounded-r"
+                              style={{ width: `${scale(previous)}%` }}
                             />
                           )}
                           
-                          {/* Projected total line */}
-                          {shouldProject && projectedTotal !== current && (
-                            <div 
-                              className="absolute top-0 bottom-0 w-0.5 bg-primary/30 z-10"
-                              style={{ left: `${scale(projectedTotal)}%` }}
-                            />
-                          )}
-                          
-                          {/* Current week progress bar */}
+                          {/* Current week progress bar - same height as previous week */}
                           <motion.div 
                             className={cn(
-                              "absolute inset-y-0 left-0",
+                              "absolute inset-y-[25%] left-0 rounded-r",
                               previous && current > previous 
                                 ? "bg-gradient-to-r from-primary/90 to-primary shadow-lg shadow-primary/20" 
                                 : "bg-gradient-to-r from-destructive/80 to-destructive/90 shadow-lg shadow-destructive/20"
@@ -418,15 +410,30 @@ const MetricCard = ({
                             transition={{ duration: 0.8, ease: "easeInOut" }}
                           />
                           
-                          {/* Dotted projection extension */}
+                          {/* Dotted projection extension - aligned with bars */}
                           {shouldProject && projectedTotal > current && (
                             <div 
-                              className="absolute top-[25%] bottom-[25%] border-2 border-dashed border-primary/40 rounded-r"
+                              className="absolute inset-y-[25%] border-2 border-dashed border-primary/40 rounded-r"
                               style={{ 
                                 left: `${scale(current)}%`,
                                 width: `${scale(projectedTotal - current)}%`,
                                 borderLeft: 'none'
                               }}
+                            />
+                          )}
+                          
+                          {/* Vertical reference lines */}
+                          {previous && (
+                            <div 
+                              className="absolute top-0 bottom-0 w-0.5 bg-border/30 z-10"
+                              style={{ left: `${scale(previous)}%` }}
+                            />
+                          )}
+                          
+                          {shouldProject && projectedTotal !== current && (
+                            <div 
+                              className="absolute top-0 bottom-0 w-0.5 bg-primary/20 z-10"
+                              style={{ left: `${scale(projectedTotal)}%` }}
                             />
                           )}
                           

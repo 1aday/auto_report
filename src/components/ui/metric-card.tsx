@@ -239,26 +239,18 @@ export function StyledMetricCard({
                       
                       return (
                         <>
-                          {/* Last week's reference line */}
+                          {/* Last week's total bar - grey background reference */}
                           {previousValue && (
                             <div 
-                              className="absolute top-0 bottom-0 w-0.5 bg-border/50 z-10"
-                              style={{ left: `${scale(previousValue)}%` }}
+                              className="absolute inset-y-[25%] left-0 bg-muted/50 rounded-r"
+                              style={{ width: `${scale(previousValue)}%` }}
                             />
                           )}
                           
-                          {/* Projected total line */}
-                          {shouldProject && projectedTotal !== value && (
-                            <div 
-                              className="absolute top-0 bottom-0 w-0.5 bg-primary/30 z-10"
-                              style={{ left: `${scale(projectedTotal)}%` }}
-                            />
-                          )}
-                          
-                          {/* Current week progress bar */}
+                          {/* Current week progress bar - same height as previous week */}
                           <motion.div 
                             className={cn(
-                              "absolute inset-y-0 left-0",
+                              "absolute inset-y-[25%] left-0 rounded-r",
                               previousValue && value > previousValue 
                                 ? "bg-gradient-to-r from-primary/90 to-primary shadow-lg shadow-primary/20" 
                                 : "bg-gradient-to-r from-destructive/80 to-destructive/90 shadow-lg shadow-destructive/20"
@@ -268,15 +260,30 @@ export function StyledMetricCard({
                             transition={{ duration: 0.8, ease: "easeInOut" }}
                           />
                           
-                          {/* Dotted projection extension */}
+                          {/* Dotted projection extension - aligned with bars */}
                           {shouldProject && projectedTotal > value && (
                             <div 
-                              className="absolute top-[25%] bottom-[25%] border-2 border-dashed border-primary/40 rounded-r"
+                              className="absolute inset-y-[25%] border-2 border-dashed border-primary/40 rounded-r"
                               style={{ 
                                 left: `${scale(value)}%`,
                                 width: `${scale(projectedTotal - value)}%`,
                                 borderLeft: 'none'
                               }}
+                            />
+                          )}
+                          
+                          {/* Vertical reference lines */}
+                          {previousValue && (
+                            <div 
+                              className="absolute top-0 bottom-0 w-0.5 bg-border/30 z-10"
+                              style={{ left: `${scale(previousValue)}%` }}
+                            />
+                          )}
+                          
+                          {shouldProject && projectedTotal !== value && (
+                            <div 
+                              className="absolute top-0 bottom-0 w-0.5 bg-primary/20 z-10"
+                              style={{ left: `${scale(projectedTotal)}%` }}
                             />
                           )}
                           
