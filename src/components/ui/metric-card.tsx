@@ -303,21 +303,22 @@ export function StyledMetricCard({
                     const projComparison = (previousValue && previousValue > 0) ? 
                       ((projectedTotal - previousValue) / previousValue) * 100 : 0
                     
-                    if (paceComparison > 10) {
+                    // Compare projected total vs last week's total (not pace)
+                    if (projComparison > 5) {
                       return <span className="text-primary font-medium">
-                        🚀 Significantly ahead of last week&apos;s pace • Projecting {formatNumber(projectedTotal)} ({projComparison > 0 ? '+' : ''}{Math.round(projComparison)}%)
+                        🚀 Projecting {formatNumber(projectedTotal)} • {projComparison > 0 ? '+' : ''}{Math.round(projComparison)}% vs last week
                       </span>
-                    } else if (paceComparison > 0) {
+                    } else if (projComparison > 0) {
                       return <span className="text-primary">
-                        ↑ Ahead of last week&apos;s pace • Projecting {formatNumber(projectedTotal)} ({projComparison > 0 ? '+' : ''}{Math.round(projComparison)}%)
+                        ↑ Projecting {formatNumber(projectedTotal)} • {projComparison > 0 ? '+' : ''}{Math.round(projComparison)}% vs last week
                       </span>
-                    } else if (paceComparison > -10) {
+                    } else if (projComparison > -5) {
                       return <span className="text-muted-foreground">
-                        ↓ Slightly behind pace • Projecting {formatNumber(projectedTotal)} ({Math.round(projComparison)}%)
+                        ↓ Projecting {formatNumber(projectedTotal)} • {Math.round(projComparison)}% vs last week
                       </span>
                     } else {
                       return <span className="text-destructive">
-                        ⚠ Behind last week&apos;s pace • Projecting {formatNumber(projectedTotal)} ({Math.round(projComparison)}%)
+                        ⚠ Projecting {formatNumber(projectedTotal)} • {Math.round(projComparison)}% vs last week
                       </span>
                     }
                   })()}
