@@ -186,15 +186,17 @@ export function StyledMetricCard({
                 <div className="space-y-1">
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-muted-foreground">
-                      {getWeekProgressLabel(progressValue > 0 ? progressValue : 50)}
+                      {getWeekProgressLabel(progressValue)}
                     </span>
                     <span className="font-medium text-foreground">
-                      Week {Math.round(progressValue)}% complete
+                      {progressValue === 100 ? 'Week 100% complete' : 
+                       progressValue > 0 ? `Week ${Math.round(progressValue)}% complete` : 
+                       'Week not started'}
                     </span>
                   </div>
                   
                   {/* Key comparison metrics */}
-                  {previousValue && (
+                  {previousValue && progressValue > 0 && (
                     <div className="flex justify-between text-[10px] text-muted-foreground">
                       <span>
                         At this point last week: {formatNumber(previousValue * (progressValue / 100))}
@@ -203,8 +205,12 @@ export function StyledMetricCard({
                         "font-medium",
                         value > previousValue * (progressValue / 100) ? "text-primary" : "text-destructive"
                       )}>
-                        {value > previousValue * (progressValue / 100) ? "↑" : "↓"} 
-                        {Math.abs(Math.round(((value - (previousValue * (progressValue / 100))) / (previousValue * (progressValue / 100))) * 100))}% vs pace
+                        {(() => {
+                          const lastWeekAtThisPoint = previousValue * (progressValue / 100)
+                          if (lastWeekAtThisPoint === 0) return value > 0 ? "↑ New this week" : "—"
+                          const pctDiff = ((value - lastWeekAtThisPoint) / lastWeekAtThisPoint) * 100
+                          return `${value > lastWeekAtThisPoint ? "↑" : "↓"} ${Math.abs(Math.round(pctDiff))}% vs pace`
+                        })()}
                       </span>
                     </div>
                   )}
@@ -315,9 +321,11 @@ export function StyledMetricCard({
                 {/* Status message */}
                 <div className="text-[10px] text-center">
                   {(() => {
-                    const paceComparison = previousValue ? 
-                      ((value - (previousValue * (progressValue / 100))) / (previousValue * (progressValue / 100))) * 100 : 0
-                    const projComparison = previousValue ? 
+                    const lastWeekAtThisPoint = previousValue ? previousValue * (progressValue / 100) : 0
+                    const paceComparison = (lastWeekAtThisPoint > 0) ? 
+                      ((value - lastWeekAtThisPoint) / lastWeekAtThisPoint) * 100 : 
+                      (value > 0 ? 100 : 0)
+                    const projComparison = (previousValue && previousValue > 0) ? 
                       ((projectedTotal - previousValue) / previousValue) * 100 : 0
                     
                     if (paceComparison > 10) {

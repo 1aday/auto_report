@@ -1,5 +1,5 @@
 /**
- * Calculate the progress of the current week with hourly precision
+ * Calculate the progress of a week (current or past) with hourly precision
  * Weeks start on Monday at 00:00 and end on Sunday at 23:59
  */
 export function calculateWeekProgress(weekStartDate: string | Date): number {
@@ -23,9 +23,14 @@ export function calculateWeekProgress(weekStartDate: string | Date): number {
   weekEnd.setDate(weekEnd.getDate() + 6)
   weekEnd.setHours(23, 59, 59, 999)
   
-  // Check if we're in the current week
-  if (now < start || now > weekEnd) {
-    return 0 // Not current week
+  // If we're past this week, it's 100% complete
+  if (now > weekEnd) {
+    return 100 // Week is complete
+  }
+  
+  // If we're before this week, it's 0% complete
+  if (now < start) {
+    return 0 // Week hasn't started
   }
   
   // Calculate hours elapsed with precision
@@ -66,6 +71,7 @@ export function isCurrentWeek(weekStartDate: string | Date): boolean {
  */
 export function getWeekProgressLabel(progress: number): string {
   if (progress === 0) return "Week not started"
+  if (progress === 100) return "Week complete"
   
   const now = new Date()
   const hour = now.getHours()
@@ -85,6 +91,6 @@ export function getWeekProgressLabel(progress: number): string {
   if (progress < 57.1) return "Thursday" + timeOfDay
   if (progress < 71.4) return "Friday" + timeOfDay
   if (progress < 85.7) return "Saturday" + timeOfDay
-  if (progress >= 85.7) return "Sunday" + timeOfDay
+  if (progress < 100) return "Sunday" + timeOfDay
   return "In progress"
 }

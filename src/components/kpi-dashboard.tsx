@@ -347,12 +347,14 @@ const MetricCard = ({
                       {weekProgressLabel}
                     </span>
                     <span className="font-medium text-foreground">
-                      Week {Math.round(weekProgress)}% complete
+                      {weekProgress === 100 ? 'Week 100% complete' : 
+                       weekProgress > 0 ? `Week ${Math.round(weekProgress)}% complete` : 
+                       'Week not started'}
                     </span>
                   </div>
                   
                   {/* Key comparison metrics */}
-                  {previous && (
+                  {previous && weekProgress > 0 && (
                     <div className="flex justify-between text-[10px] text-muted-foreground">
                       <span>
                         At this point last week: {formatNumber(previous * (weekProgress / 100))}
@@ -361,8 +363,12 @@ const MetricCard = ({
                         "font-medium",
                         current > previous * (weekProgress / 100) ? "text-primary" : "text-destructive"
                       )}>
-                        {current > previous * (weekProgress / 100) ? "↑" : "↓"} 
-                        {Math.abs(Math.round(((current - (previous * (weekProgress / 100))) / (previous * (weekProgress / 100))) * 100))}% vs pace
+                        {(() => {
+                          const lastWeekAtThisPoint = previous * (weekProgress / 100)
+                          if (lastWeekAtThisPoint === 0) return current > 0 ? "↑ New this week" : "—"
+                          const pctDiff = ((current - lastWeekAtThisPoint) / lastWeekAtThisPoint) * 100
+                          return `${current > lastWeekAtThisPoint ? "↑" : "↓"} ${Math.abs(Math.round(pctDiff))}% vs pace`
+                        })()}
                       </span>
                     </div>
                   )}
@@ -473,9 +479,11 @@ const MetricCard = ({
                 {/* Status message */}
                 <div className="text-[10px] text-center">
                   {(() => {
-                    const paceComparison = previous ? 
-                      ((current - (previous * (weekProgress / 100))) / (previous * (weekProgress / 100))) * 100 : 0
-                    const projComparison = previous ? 
+                    const lastWeekAtThisPoint = previous ? previous * (weekProgress / 100) : 0
+                    const paceComparison = (lastWeekAtThisPoint > 0) ? 
+                      ((current - lastWeekAtThisPoint) / lastWeekAtThisPoint) * 100 : 
+                      (current > 0 ? 100 : 0)
+                    const projComparison = (previous && previous > 0) ? 
                       ((projectedTotal - previous) / previous) * 100 : 0
                     
                     if (paceComparison > 10) {
