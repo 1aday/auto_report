@@ -9,6 +9,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 import { Skeleton } from "@/components/ui/skeleton"
 import { format } from "date-fns"
+import { usePathname } from "next/navigation"
 import { isCurrentWeek as checkIsCurrentWeek } from "@/lib/week-progress"
 
 type Row = {
@@ -47,25 +48,63 @@ const Heat = ({ value, precision = 1 }: { value: number | null, precision?: numb
 const formatNumber = (num: number) => new Intl.NumberFormat('en-US').format(num)
 
 export default function SourcesReport() {
+  const pathname = usePathname()
+  const isMonthly = pathname?.includes('/sources-monthly')
   const queryClient = useQueryClient()
   const { data, isLoading, error } = useQuery({
-    queryKey: ["weekly-source-changes-pct"],
+    queryKey: ["source-changes-pct", isMonthly ? 'monthly' : 'weekly'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ga4_weekly_source_changes_pct")
-        .select(`
-          week_start,
-          session_source,
-          sessions,
-          first_visit, demo_submit, vf_signup,
-          first_visit_wow_pct, demo_submit_wow_pct, vf_signup_wow_pct,
-          first_visit_wo4w_pct, demo_submit_wo4w_pct, vf_signup_wo4w_pct,
-          first_visit_wo12w_pct, demo_submit_wo12w_pct, vf_signup_wo12w_pct
-        `)
-        .order("week_start", { ascending: false })
+      if (isMonthly) {
+        const { data, error } = await supabase
+          .from("ga4_monthly_source_changes_pct")
+          .select(`
+            month_start,
+            session_source,
+            sessions,
+            first_visit, demo_submit, vf_signup,
+            first_visit_mom_pct, demo_submit_mom_pct, vf_signup_mom_pct,
+            first_visit_mo3m_pct, demo_submit_mo3m_pct, vf_signup_mo3m_pct,
+            first_visit_mo12m_pct, demo_submit_mo12m_pct, vf_signup_mo12m_pct
+          `)
+          .order("month_start", { ascending: false })
 
-      if (error) throw error
-      return data as Row[]
+        if (error) throw error
+        // Map to weekly-shaped Row for reuse
+        const mapped = (data || []).map((r: any) => ({
+          week_start: r.month_start,
+          session_source: r.session_source,
+          sessions: r.sessions,
+          first_visit: r.first_visit,
+          demo_submit: r.demo_submit,
+          vf_signup: r.vf_signup,
+          first_visit_wow_pct: r.first_visit_mom_pct,
+          demo_submit_wow_pct: r.demo_submit_mom_pct,
+          vf_signup_wow_pct: r.vf_signup_mom_pct,
+          first_visit_wo4w_pct: r.first_visit_mo3m_pct,
+          demo_submit_wo4w_pct: r.demo_submit_mo3m_pct,
+          vf_signup_wo4w_pct: r.vf_signup_mo3m_pct,
+          first_visit_wo12w_pct: r.first_visit_mo12m_pct,
+          demo_submit_wo12w_pct: r.demo_submit_mo12m_pct,
+          vf_signup_wo12w_pct: r.vf_signup_mo12m_pct,
+        })) as Row[]
+        return mapped
+      } else {
+        const { data, error } = await supabase
+          .from("ga4_weekly_source_changes_pct")
+          .select(`
+            week_start,
+            session_source,
+            sessions,
+            first_visit, demo_submit, vf_signup,
+            first_visit_wow_pct, demo_submit_wow_pct, vf_signup_wow_pct,
+            first_visit_wo4w_pct, demo_submit_wo4w_pct, vf_signup_wo4w_pct,
+            first_visit_wo12w_pct, demo_submit_wo12w_pct, vf_signup_wo12w_pct
+          `)
+          .order("week_start", { ascending: false })
+
+        if (error) throw error
+        return data as Row[]
+      }
     },
     refetchInterval: 60000,
     staleTime: 30000,
@@ -182,7 +221,9 @@ export default function SourcesReport() {
     if (referenceMode === 'allTime') return null
     if (referenceMode === 'current') return weeks[0]
     const first = weeks[0]
-    const isCurr = checkIsCurrentWeek(first)
+    const isCurr = isMonthly
+      ? (() => { const d = new Date(first); const n = new Date(); return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() })()
+      : checkIsCurrentWeek(first)
     if (isCurr && weeks.length > 1) return weeks[1]
     return first
   }, [weeks, referenceMode])
