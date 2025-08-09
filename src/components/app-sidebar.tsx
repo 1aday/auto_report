@@ -13,6 +13,7 @@ import {
   Activity,
   User,
   RefreshCw,
+  LineChart,
 } from "lucide-react"
 
 import {
@@ -48,6 +49,11 @@ const menuItems = [
     title: "KPI Dashboard",
     url: "/kpi",
     icon: TrendingUp,
+  },
+  {
+    title: "Sources Report",
+    url: "/sources",
+    icon: LineChart,
   },
 ]
 

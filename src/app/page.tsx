@@ -17,6 +17,13 @@ const reports: Report[] = [
     emoji: "📈",
     gradient: "from-emerald-500/20 to-emerald-500/5",
   },
+  {
+    title: "Sources (Top-40)",
+    href: "/sources",
+    description: "Per-source first_visit, demos, signups with WoW/4W/12W",
+    emoji: "🧭",
+    gradient: "from-violet-500/15 to-violet-500/5",
+  },
 ]
 
 export default function Home() {
