@@ -46,28 +46,13 @@ import {
 const menuItems = [
   {
     title: "Dashboard",
-    url: "/",
+    url: "/dashboard",
     icon: Home,
   },
   {
     title: "KPI Dashboard",
     url: "/kpi",
     icon: TrendingUp,
-  },
-  {
-    title: "GA4 Analytics",
-    url: "/dashboard",
-    icon: ChartBar,
-  },
-  {
-    title: "Drill-Down",
-    url: "/analytics/drilldown",
-    icon: Layers,
-  },
-  {
-    title: "Weekly Reports",
-    url: "/dashboard/drilldown",
-    icon: Activity,
   },
 ]
 
