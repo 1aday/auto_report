@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
+import { BreadcrumbTitle } from "@/components/breadcrumb-title";
 import { AppSidebar } from "@/components/app-sidebar";
 
 const geistSans = Geist({
@@ -31,16 +32,16 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <SidebarProvider defaultOpen={true}>
+          <SidebarProvider defaultOpen={false}>
             <AppSidebar />
             <SidebarInset>
               <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
                 <SidebarTrigger className="-ml-1" />
                 <div className="h-4 w-px bg-border" />
                 <div className="flex flex-1 items-center gap-2 text-sm">
-                  <span className="font-medium">Analytics Dashboard</span>
+                  <span className="font-medium">Analytics</span>
                   <span className="text-muted-foreground">›</span>
-                  <span className="text-muted-foreground">Real-time Data</span>
+                  <BreadcrumbTitle />
                 </div>
               </header>
               <main className="flex-1 p-4">

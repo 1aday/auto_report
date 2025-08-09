@@ -216,9 +216,34 @@ const MetricCard = ({
   color?: string
 }) => {
   const colorClasses = {
-    primary: "from-primary/20 to-primary/10 border-primary/30",
-    blue: "from-blue-500/20 to-blue-500/10 border-blue-500/30",
-    purple: "from-purple-500/20 to-purple-500/10 border-purple-500/30",
+    primary: "from-primary/35 to-primary/12 border-primary/45",
+    blue: "from-blue-500/35 to-blue-500/12 border-blue-500/45",
+    purple: "from-purple-500/35 to-purple-500/14 border-purple-500/45",
+    indigo: "from-indigo-500/35 to-indigo-500/14 border-indigo-500/45",
+    teal: "from-teal-500/25 to-teal-500/8 border-teal-500/30",
+    amber: "from-amber-500/25 to-amber-500/8 border-amber-500/30",
+    rose: "from-rose-500/35 to-rose-500/14 border-rose-500/45",
+  } as const
+
+  // Progress bar color: always emerald to match positive-change green
+  const universalBarGradient = "from-emerald-600 to-emerald-500"
+  const projectionBorderClasses: Record<string, string> = {
+    primary: "border-primary/40",
+    blue: "border-blue-400/50",
+    purple: "border-purple-400/50",
+    indigo: "border-indigo-400/50",
+    teal: "border-teal-400/50",
+    amber: "border-amber-400/50",
+    rose: "border-rose-400/50",
+  }
+  const projectionMarkerBg: Record<string, string> = {
+    primary: "bg-primary/20",
+    blue: "bg-blue-400/20",
+    purple: "bg-purple-400/20",
+    indigo: "bg-indigo-400/20",
+    teal: "bg-teal-400/20",
+    amber: "bg-amber-400/20",
+    rose: "bg-rose-400/20",
   }
 
   // Calculate week progress using utility function
@@ -302,10 +327,10 @@ const MetricCard = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className={cn("relative overflow-hidden", `bg-gradient-to-br ${colorClasses[color as keyof typeof colorClasses]}`)}>
-        <CardHeader className="pb-1">
+      <Card className={cn("relative overflow-hidden gap-2", `bg-gradient-to-br ${colorClasses[color as keyof typeof colorClasses]}`)}>
+        <CardHeader className="pb-0">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-base sm:text-lg font-semibold tracking-tight text-foreground/90">
               {title}
             </CardTitle>
             <div className={cn("p-2 rounded-lg bg-background/50 backdrop-blur-sm")}>
@@ -313,76 +338,38 @@ const MetricCard = ({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-2">
-          <div className="space-y-3">
+        <CardContent className="pt-0">
+          <div className="space-y-0">
             <div>
-              <div className="text-3xl font-bold tabular-nums">
+              <div className="text-display font-bold tabular-nums mt-0">
                 {formatNumber(current)}
               </div>
-              {shouldProject && (
-                <div className="text-xs text-muted-foreground mt-1">
-                  {weekProgress === 100 ? 
-                    <>Week complete (7/7 days)</> :
-                    <>{todayName} ({Math.max(1, Math.round((weekProgress * 7) / 100))}/7 days)</>
-                  } • 
-                  Projected: <span className="font-medium text-foreground">{formatNumber(projectedTotal)}</span>
-                </div>
-              )}
+              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-caption">
+                {shouldProject && (
+                  (() => {
+                    const pc = previous ? ((projectedTotal - previous) / previous) * 100 : null
+                    return (
+                      <div className="text-muted-foreground">
+                        Projected: <span className={cn("font-medium", pc !== null && pc >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive")}>{formatNumber(projectedTotal)}</span>
+                      </div>
+                    )
+                  })()
+                )}
+                {typeof previous === 'number' && (
+                  <div className="text-muted-foreground">
+                    Last week: <span className="font-medium text-foreground">{formatNumber(previous)}</span>
+                  </div>
+                )}
+              </div>
             </div>
             
             {(isCurrentWeek || shouldProject) && (
               <div className="mt-3 space-y-3">
-                {/* Progress header with key metrics */}
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-muted-foreground">
-                      {weekProgressLabel}
-                    </span>
-                    <span className="font-medium text-foreground">
-                      {weekProgress === 100 ? 'Week 100% complete' : 
-                       weekProgress > 0 ? `Week ${Math.round(weekProgress)}% complete` : 
-                       'Week not started'}
-                    </span>
-                  </div>
-                  
-                  {/* Key comparison metrics */}
-                  {previous && weekProgress > 0 && (
-                    <div className="flex justify-between text-[10px] text-muted-foreground">
-                      <span>
-                        At this point last week: {formatNumber(previous * (weekProgress / 100))}
-                      </span>
-                      <span className={cn(
-                        "font-medium",
-                        current > previous * (weekProgress / 100) ? "text-primary" : "text-destructive"
-                      )}>
-                        {(() => {
-                          const lastWeekAtThisPoint = previous * (weekProgress / 100)
-                          const absDiff = current - lastWeekAtThisPoint
-                          if (lastWeekAtThisPoint === 0) return current > 0 ? `↑ +${formatNumber(current)} (new)` : "—"
-                          const pctDiff = ((current - lastWeekAtThisPoint) / lastWeekAtThisPoint) * 100
-                          return `${current > lastWeekAtThisPoint ? "↑" : "↓"} ${formatNumber(Math.abs(absDiff))} (${Math.abs(Math.round(pctDiff))}%)`
-                        })()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                
+                {/* Progress bar only */}
                 {/* The Perfect Progress Bar - Clean & Stunning */}
                 <div className="space-y-2">
-                  {/* Labels above the bar */}
-                  <div className="flex justify-between items-center text-[11px]">
-                    <div className="text-muted-foreground">
-                      Last week: <span className="font-medium text-foreground">{formatNumber(previous || 0)}</span>
-                    </div>
-                    {shouldProject && (
-                      <div className="text-muted-foreground">
-                        Proj: <span className="font-medium text-primary">{formatNumber(projectedTotal)}</span>
-                      </div>
-                    )}
-                  </div>
-                  
                   {/* Progress bar container */}
-                  <div className="relative h-8 bg-gradient-to-r from-background to-muted/20 rounded-full overflow-hidden border border-border/30 shadow-inner">
+                  <div className="relative h-6 sm:h-7 md:h-8 bg-gradient-to-r from-background to-muted/20 rounded-full overflow-hidden border border-border/30 shadow-inner">
                     {(() => {
                       const maxValue = Math.max(previous || 0, projectedTotal, current) * 1.15
                       const scale = (val: number) => (val / maxValue) * 100
@@ -400,10 +387,9 @@ const MetricCard = ({
                           {/* Current week progress bar - same height as previous week */}
                           <motion.div 
                             className={cn(
-                              "absolute inset-y-[25%] left-0 rounded-r",
-                              previous && current > previous 
-                                ? "bg-gradient-to-r from-primary/90 to-primary shadow-lg shadow-primary/20" 
-                                : "bg-gradient-to-r from-destructive/80 to-destructive/90 shadow-lg shadow-destructive/20"
+                              "absolute inset-y-[25%] left-0 rounded-r bg-gradient-to-r shadow-lg",
+                              universalBarGradient,
+                              "shadow-emerald-600/20"
                             )}
                             initial={{ width: 0 }}
                             animate={{ width: `${scale(current)}%` }}
@@ -413,7 +399,7 @@ const MetricCard = ({
                           {/* Dotted projection extension - aligned with bars */}
                           {shouldProject && projectedTotal > current && (
                             <div 
-                              className="absolute inset-y-[25%] border-2 border-dashed border-primary/40 rounded-r"
+                              className={cn("absolute inset-y-[25%] border-2 border-dashed rounded-r", projectionBorderClasses[color as keyof typeof projectionBorderClasses] || "border-primary/40")}
                               style={{ 
                                 left: `${scale(current)}%`,
                                 width: `${scale(projectedTotal - current)}%`,
@@ -430,29 +416,34 @@ const MetricCard = ({
                             />
                           )}
                           
-                          {shouldProject && projectedTotal !== current && (
-                            <div 
-                              className="absolute top-0 bottom-0 w-0.5 bg-primary/20 z-10"
-                              style={{ left: `${scale(projectedTotal)}%` }}
-                            />
-                          )}
+                          {/* Remove projected vertical marker; keep only last week's reference line */}
                           
-                          {/* Current value label - positioned outside */}
-                          <div 
-                            className="absolute top-1/2 -translate-y-1/2 transition-all duration-800"
-                            style={{ 
-                              left: `${Math.min(scale(current) + 2, 95)}%`,
-                            }}
-                          >
-                            <span className="text-[10px] font-bold text-foreground bg-background/90 px-1 py-0.5 rounded backdrop-blur-sm">
-                              {formatNumber(current)}
-                            </span>
-                          </div>
+                          {/* Removed numeric label inside bar to avoid duplication */}
                         </>
                       )
                     })()}
                   </div>
                   
+                  {/* Legend below the bar */}
+                  <div className="mt-1 flex items-center gap-4 text-micro text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-block h-1.5 w-5 rounded-full bg-emerald-500/80"></span>
+                      <span>Current</span>
+                    </div>
+                    {shouldProject && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-block w-5 h-0 border-t-2 border-dashed border-emerald-500/70 translate-y-[1px]"></span>
+                        <span>Projected</span>
+                      </div>
+                    )}
+                    {previous && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-block h-1.5 w-5 rounded-full bg-slate-400/40"></span>
+                        <span>Last week</span>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Day labels with current day highlight */}
                   <div className="flex text-[9px]">
                     {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => (
@@ -480,7 +471,7 @@ const MetricCard = ({
                           ((projectedTotal - previous) / previous) * 100 : 0
                         
                         const icon = projComparison > 5 ? '↑' : projComparison > -5 ? '→' : '↓'
-                        const colorClass = projComparison > 0 ? 'text-primary font-semibold' : projComparison > -5 ? 'text-muted-foreground' : 'text-destructive font-medium'
+                        const colorClass = projComparison > 0 ? 'text-emerald-500 font-semibold' : projComparison > -5 ? 'text-muted-foreground' : 'text-destructive font-medium'
                         
                         return (
                           <span className={colorClass}>
@@ -620,7 +611,12 @@ const MetricCard = ({
                 <div className="flex justify-between items-center">
                   <span>Last week: {formatNumber(previous)}</span>
                   {shouldProject && projectedTotal !== current && (
-                    <Badge variant={projectedTotal > previous ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
+                    <Badge 
+                      className={cn(
+                        "text-[10px] px-1.5 py-0",
+                        projectedTotal > previous ? "bg-emerald-600 text-white" : "bg-destructive text-destructive-foreground"
+                      )}
+                    >
                       <Sparkles className="h-2 w-2 mr-0.5" />
                       {projectedTotal > previous ? "Ahead" : "Behind"}
                     </Badge>
@@ -664,7 +660,7 @@ const DataTable = ({ data }: { data: WeeklyData[] }) => {
           return (
             <div className="whitespace-nowrap">
               <div className="space-y-1">
-                <div className="text-base font-semibold tabular-nums text-primary/80">W{weekNumber.toString().padStart(2, '0')}</div>
+              <div className="text-base font-semibold tabular-nums text-white">W{weekNumber.toString().padStart(2, '0')}</div>
                 <div className="text-[11px] leading-relaxed text-muted-foreground">
                   <div className="font-medium">{format(date, "MMM dd")} - {format(endDate, "MMM dd")}</div>
                   <div className="opacity-70">{format(date, "yyyy")}</div>
@@ -706,7 +702,7 @@ const DataTable = ({ data }: { data: WeeklyData[] }) => {
           const value = row.getValue("sessions_vs_4w_pct") as number | null
           return (
             <div 
-              className="text-right tabular-nums text-sm text-white px-1 py-0.5 rounded"
+              className="text-right tabular-nums text-sm text-white px-1 py-0.5 rounded shadow-sm"
               style={{ backgroundColor: getHeatMapBgColor(value) }}
             >
               {formatPercentage(value)}
@@ -891,21 +887,21 @@ const DataTable = ({ data }: { data: WeeklyData[] }) => {
   })
 
   return (
-    <div className="rounded-lg border bg-card overflow-hidden">
-      <div className="overflow-x-auto">
+    <div className="rounded-lg border bg-card">
+      <div className="overflow-auto max-h-[70vh]">
         <table className="w-full">
-          <thead>
+          <thead className="sticky top-0 z-20 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
             {/* Header grouping row */}
             <tr className="border-b border-border/20">
               <th className="px-3 py-1.5 border-r border-border/10"></th>
-              <th colSpan={4} className="px-2 py-1.5 text-center bg-primary/5 border-r border-border/20">
-                <span className="text-xs font-semibold uppercase tracking-wider text-primary">Sessions</span>
+              <th colSpan={4} className="px-2 py-1.5 text-center bg-teal-500/10 border-r border-border/20">
+                <span className="text-xs font-semibold uppercase tracking-wider text-teal-500">Sessions</span>
               </th>
               <th colSpan={4} className="px-2 py-1.5 text-center bg-purple-500/5 border-r border-border/20">
                 <span className="text-xs font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400">Signups</span>
               </th>
-              <th colSpan={4} className="px-2 py-1.5 text-center bg-blue-500/5 border-r border-border/20">
-                <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">Demos</span>
+              <th colSpan={4} className="px-2 py-1.5 text-center bg-amber-500/10 border-r border-border/20">
+                <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Demos</span>
               </th>
               <th colSpan={2} className="px-2 py-1.5 text-center bg-emerald-500/5">
                 <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Conversions</span>
@@ -921,20 +917,20 @@ const DataTable = ({ data }: { data: WeeklyData[] }) => {
                   const isDemosGroup = idx >= 9 && idx <= 12
                   const isConversionsGroup = idx >= 13 && idx <= 14
                   
-                  return (
+                      return (
                     <th
                       key={header.id}
-                      className={cn(
+                        className={cn(
                         isFirstColumn ? "px-3 py-2.5 text-left font-medium text-xs" : "px-2 py-1.5 text-left font-medium text-xs",
                         isFirstColumn && "border-r border-border/10",
-                        isSessionsGroup && "bg-primary/5 border-r border-border/10",
-                        isSignupsGroup && "bg-purple-500/5 border-r border-border/10",
-                        isDemosGroup && "bg-blue-500/5 border-r border-border/10",
+                          isSessionsGroup && "bg-muted/20",
+                          isSignupsGroup && "bg-muted/20",
+                          isDemosGroup && "bg-muted/20",
                         isConversionsGroup && "bg-emerald-500/5",
-                        idx === 4 && "border-r border-border/20",
-                        idx === 8 && "border-r border-border/20",
-                        idx === 12 && "border-r border-border/20",
-                        idx === 13 && "border-r border-border/10"
+                          idx === 4 && "border-r border-border/20",
+                          idx === 8 && "border-r border-border/20",
+                          idx === 12 && "border-r border-border/20",
+                          idx === 13 && "border-r border-border/10"
                       )}
                     >
                       {header.isPlaceholder
@@ -967,16 +963,14 @@ const DataTable = ({ data }: { data: WeeklyData[] }) => {
                     const isDemosGroup = idx >= 9 && idx <= 12
                     const isConversionsGroup = idx >= 13 && idx <= 14
                     
-                    return (
+                      return (
                       <td 
                         key={cell.id} 
                         className={cn(
                           isFirstColumn ? "px-3 py-2.5" : "px-2 py-1.5",
                           isFirstColumn && "border-r border-border/10",
-                          !isFirstColumn && "border-r border-border/10",
-                          idx === 4 && "border-r border-border/20",
-                          idx === 8 && "border-r border-border/20",
-                          idx === 12 && "border-r border-border/20",
+                          // Neutral borders only
+                          "border-r border-border/10",
                           idx === 14 && "border-r-0"
                         )}
                       >
@@ -1052,18 +1046,17 @@ export function KPIDashboard() {
           className="flex items-center justify-between"
         >
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent flex items-center gap-2">
-              <Sparkles className="h-8 w-8 text-primary" />
+            <h1 className="text-3xl font-bold text-white flex items-center gap-2">
+              <Sparkles className="h-8 w-8 text-white" />
               Weekly KPIs Dashboard
             </h1>
-            <p className="text-muted-foreground mt-1">
-              Real-time performance metrics with weekly comparisons
-            </p>
+            {/* Removed descriptive subtitle per request */}
           </div>
           <Button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="group"
+            variant="outline"
+            className="group bg-transparent text-foreground hover:bg-foreground/10"
           >
             <RefreshCw className={cn(
               "h-4 w-4 mr-2 transition-transform",
@@ -1093,7 +1086,7 @@ export function KPIDashboard() {
                 vs12WeekPct={latestWeek.sessions_vs_12w_pct}
                 historicalData={(data || []).map(d => d.sessions)}
                 weekStart={latestWeek.week_start}
-                color="primary"
+                color="teal"
               />
               <MetricCard
                 title="VF Signups"
@@ -1117,7 +1110,7 @@ export function KPIDashboard() {
                 vs12WeekPct={latestWeek.demo_submit_vs_12w_pct}
                 historicalData={(data || []).map(d => d.demo_submit)}
                 weekStart={latestWeek.week_start}
-                color="blue"
+                color="amber"
               />
             </div>
           )

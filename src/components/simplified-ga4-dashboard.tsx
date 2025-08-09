@@ -143,8 +143,8 @@ export function SimplifiedGA4Dashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">GA4 Analytics Overview</h2>
-        <p className="text-muted-foreground">
+        <h2 className="text-headline font-semibold tracking-tight">GA4 Analytics Overview</h2>
+        <p className="text-body text-muted-foreground">
           Weekly performance metrics from Google Analytics 4
         </p>
       </div>
@@ -160,7 +160,7 @@ export function SimplifiedGA4Dashboard() {
           vs12WeekPct={latestWeek?.sessions_vs_12w_pct || null}
           historicalData={data?.map(d => d.sessions) || []}
           icon={Activity}
-          color="primary"
+          color="violet"
                         showProgress={true}
           progressValue={weekProgress}
           isCurrentWeek={weekProgress > 0}
@@ -175,7 +175,7 @@ export function SimplifiedGA4Dashboard() {
           vs12WeekPct={latestWeek?.vf_signup_vs_12w_pct || null}
           historicalData={data?.map(d => d.vf_signup) || []}
           icon={Users}
-          color="purple"
+          color="emerald"
                         showProgress={true}
           progressValue={weekProgress}
           isCurrentWeek={weekProgress > 0}
@@ -190,7 +190,7 @@ export function SimplifiedGA4Dashboard() {
           vs12WeekPct={latestWeek?.demo_submit_vs_12w_pct || null}
           historicalData={data?.map(d => d.demo_submit) || []}
           icon={Target}
-          color="blue"
+          color="amber"
                         showProgress={true}
           progressValue={weekProgress}
           isCurrentWeek={weekProgress > 0}
@@ -199,7 +199,7 @@ export function SimplifiedGA4Dashboard() {
       </div>
 
       {/* Weekly table */}
-      <Card className="overflow-hidden">
+      <Card className="">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Weekly Performance Details</CardTitle>
           <CardDescription className="text-xs">
@@ -207,21 +207,21 @@ export function SimplifiedGA4Dashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="rounded-lg border bg-card overflow-hidden">
-            <div className="overflow-x-auto">
+          <div className="rounded-lg border bg-card">
+            <div className="overflow-auto max-h-[70vh]">
               <table className="w-full">
-              <thead>
+              <thead className="sticky top-0 z-20 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
                 {/* Header grouping row */}
                 <tr className="border-b border-border/20">
                   <th className="px-3 py-1.5 border-r border-border/10"></th>
-                  <th colSpan={4} className="px-2 py-1.5 text-center bg-primary/5 border-r border-border/20">
-                    <span className="text-xs font-bold uppercase tracking-wider text-primary/80">Sessions</span>
+                  <th colSpan={4} className="px-2 py-1.5 text-center bg-violet-500/10 border-r border-border/20">
+                    <span className="text-caption font-bold uppercase tracking-wider text-violet-400">Sessions</span>
                   </th>
-                  <th colSpan={4} className="px-2 py-1.5 text-center bg-purple-500/5 border-r border-border/20">
-                    <span className="text-xs font-bold uppercase tracking-wider text-purple-500/80">Signups</span>
+                  <th colSpan={4} className="px-2 py-1.5 text-center bg-emerald-500/10 border-r border-border/20">
+                    <span className="text-caption font-bold uppercase tracking-wider text-emerald-400">Signups</span>
                   </th>
-                  <th colSpan={4} className="px-2 py-1.5 text-center bg-blue-500/5 border-r border-border/20">
-                    <span className="text-xs font-bold uppercase tracking-wider text-blue-500/80">Demos</span>
+                  <th colSpan={4} className="px-2 py-1.5 text-center bg-amber-500/10 border-r border-border/20">
+                    <span className="text-caption font-bold uppercase tracking-wider text-amber-400">Demos</span>
                   </th>
                   <th colSpan={2} className="px-2 py-1.5 text-center bg-emerald-500/5">
                     <span className="text-xs font-bold uppercase tracking-wider text-emerald-500/80">Conversions</span>
@@ -231,20 +231,20 @@ export function SimplifiedGA4Dashboard() {
                 <tr className="border-b bg-muted/20">
                   <th className="text-left px-3 py-2 font-medium text-xs border-r border-border/10">Week</th>
                   {/* Sessions columns */}
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-primary/5 border-r border-border/10">Sessions</th>
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-primary/5 border-r border-border/10">WoW</th>
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-primary/5 border-r border-border/10">4W</th>
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-primary/5 border-r border-border/20">12W</th>
+                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/10">Sessions</th>
+                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/10">WoW</th>
+                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/10">4W</th>
+                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/20">12W</th>
                   {/* Signups columns */}
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-purple-500/5 border-r border-border/10">Signups</th>
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-purple-500/5 border-r border-border/10">WoW</th>
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-purple-500/5 border-r border-border/10">4W</th>
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-purple-500/5 border-r border-border/20">12W</th>
+                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/10">Signups</th>
+                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/10">WoW</th>
+                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/10">4W</th>
+                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/20">12W</th>
                   {/* Demos columns */}
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-blue-500/5 border-r border-border/10">Demos</th>
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-blue-500/5 border-r border-border/10">WoW</th>
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-blue-500/5 border-r border-border/10">4W</th>
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-blue-500/5 border-r border-border/20">12W</th>
+                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/10">Demos</th>
+                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/10">WoW</th>
+                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/10">4W</th>
+                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/20">12W</th>
                   {/* Conversion columns */}
                   <th className="text-right px-2 py-2 font-medium text-xs bg-emerald-500/5 border-r border-border/10">Signup %</th>
                   <th className="text-right px-2 py-2 font-medium text-xs bg-emerald-500/5">Demo %</th>
@@ -288,61 +288,61 @@ export function SimplifiedGA4Dashboard() {
                         </div>
                       </td>
                       {/* Sessions */}
-                      <td className="text-right px-2 py-1.5 tabular-nums font-medium border-r border-border/10">{formatNumber(week.sessions)}</td>
+                      <td className="text-right px-2 py-1.5 tabular-nums font-medium border-l border-violet-500/20 border-r border-border/10">{formatNumber(week.sessions)}</td>
                       <td className="px-1 py-1.5 border-r border-border/10">
-                        <div className="text-right tabular-nums text-white px-2 py-0.5 rounded text-xs inline-block min-w-[60px]"
+                        <div className="text-right tabular-nums text-white px-2 py-0.5 rounded text-xs inline-block min-w-[60px] shadow-sm"
                           style={{ backgroundColor: getHeatMapBgColor(week.sessions_vs_prev_pct) }}>
                           {formatPercentage(week.sessions_vs_prev_pct)}
                         </div>
                       </td>
                       <td className="px-1 py-1.5 border-r border-border/10">
-                        <div className="text-right tabular-nums text-white px-2 py-0.5 rounded text-xs inline-block min-w-[60px]"
+                        <div className="text-right tabular-nums text-white px-2 py-0.5 rounded text-xs inline-block min-w-[60px] shadow-sm"
                           style={{ backgroundColor: getHeatMapBgColor(week.sessions_vs_4w_pct) }}>
                           {formatPercentage(week.sessions_vs_4w_pct)}
                         </div>
                       </td>
-                      <td className="px-1 py-1.5 border-r border-border/20">
-                        <div className="text-right tabular-nums text-white px-2 py-0.5 rounded text-xs inline-block min-w-[60px]"
+                      <td className="px-1 py-1.5 border-r border-violet-500/20">
+                        <div className="text-right tabular-nums text-white px-2 py-0.5 rounded text-xs inline-block min-w-[60px] shadow-sm"
                           style={{ backgroundColor: getHeatMapBgColor(week.sessions_vs_12w_pct) }}>
                           {formatPercentage(week.sessions_vs_12w_pct)}
                         </div>
                       </td>
                       {/* Signups */}
-                      <td className="text-right px-2 py-1.5 tabular-nums font-medium border-r border-border/10">{formatNumber(week.vf_signup)}</td>
+                      <td className="text-right px-2 py-1.5 tabular-nums font-medium border-l border-emerald-500/20 border-r border-border/10">{formatNumber(week.vf_signup)}</td>
                       <td className="px-1 py-1.5 border-r border-border/10">
-                        <div className="text-right tabular-nums text-white px-2 py-0.5 rounded text-xs inline-block min-w-[60px]"
+                        <div className="text-right tabular-nums text-white px-2 py-0.5 rounded text-xs inline-block min-w-[60px] shadow-sm"
                           style={{ backgroundColor: getHeatMapBgColor(week.vf_signup_vs_prev_pct) }}>
                           {formatPercentage(week.vf_signup_vs_prev_pct)}
                         </div>
                       </td>
                       <td className="px-1 py-1.5 border-r border-border/10">
-                        <div className="text-right tabular-nums text-white px-2 py-0.5 rounded text-xs inline-block min-w-[60px]"
+                        <div className="text-right tabular-nums text-white px-2 py-0.5 rounded text-xs inline-block min-w-[60px] shadow-sm"
                           style={{ backgroundColor: getHeatMapBgColor(week.vf_signup_vs_4w_pct) }}>
                           {formatPercentage(week.vf_signup_vs_4w_pct)}
                         </div>
                       </td>
-                      <td className="px-1 py-1.5 border-r border-border/20">
-                        <div className="text-right tabular-nums text-white px-2 py-0.5 rounded text-xs inline-block min-w-[60px]"
+                      <td className="px-1 py-1.5 border-r border-emerald-500/20">
+                        <div className="text-right tabular-nums text-white px-2 py-0.5 rounded text-xs inline-block min-w-[60px] shadow-sm"
                           style={{ backgroundColor: getHeatMapBgColor(week.vf_signup_vs_12w_pct) }}>
                           {formatPercentage(week.vf_signup_vs_12w_pct)}
                         </div>
                       </td>
                       {/* Demos */}
-                      <td className="text-right px-2 py-1.5 tabular-nums font-medium border-r border-border/10">{formatNumber(week.demo_submit)}</td>
+                      <td className="text-right px-2 py-1.5 tabular-nums font-medium border-l border-amber-500/20 border-r border-border/10">{formatNumber(week.demo_submit)}</td>
                       <td className="px-1 py-1.5 border-r border-border/10">
-                        <div className="text-right tabular-nums text-white px-2 py-0.5 rounded text-xs inline-block min-w-[60px]"
+                        <div className="text-right tabular-nums text-white px-2 py-0.5 rounded text-xs inline-block min-w-[60px] shadow-sm"
                           style={{ backgroundColor: getHeatMapBgColor(week.demo_submit_vs_prev_pct) }}>
                           {formatPercentage(week.demo_submit_vs_prev_pct)}
                         </div>
                       </td>
                       <td className="px-1 py-1.5 border-r border-border/10">
-                        <div className="text-right tabular-nums text-white px-2 py-0.5 rounded text-xs inline-block min-w-[60px]"
+                        <div className="text-right tabular-nums text-white px-2 py-0.5 rounded text-xs inline-block min-w-[60px] shadow-sm"
                           style={{ backgroundColor: getHeatMapBgColor(week.demo_submit_vs_4w_pct) }}>
                           {formatPercentage(week.demo_submit_vs_4w_pct)}
                         </div>
                       </td>
-                      <td className="px-1 py-1.5 border-r border-border/20">
-                        <div className="text-right tabular-nums text-white px-2 py-0.5 rounded text-xs inline-block min-w-[60px]"
+                      <td className="px-1 py-1.5 border-r border-amber-500/20">
+                        <div className="text-right tabular-nums text-white px-2 py-0.5 rounded text-xs inline-block min-w-[60px] shadow-sm"
                           style={{ backgroundColor: getHeatMapBgColor(week.demo_submit_vs_12w_pct) }}>
                           {formatPercentage(week.demo_submit_vs_12w_pct)}
                         </div>

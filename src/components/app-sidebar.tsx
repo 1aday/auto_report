@@ -108,14 +108,14 @@ export function AppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
+            <SidebarMenuButton size="lg" asChild className="group-data-[collapsible=icon]:p-1">
               <Link href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-lime-500 to-lime-600 text-sidebar-primary-foreground">
-                  <BarChart3 className="size-4" />
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-slate-950 to-slate-800 text-white ring-1 ring-white/10 overflow-hidden">
+                  <span className="text-lg">🚀</span>
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                  <span className="truncate font-semibold">Analytics Hub</span>
-                  <span className="truncate text-xs">Real-time Dashboard</span>
+                   <span className="truncate font-semibold text-white">Analytics Hub</span>
+                   <span className="truncate text-xs text-white/70">Dashboard</span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -136,9 +136,9 @@ export function AppSidebar() {
                     isActive={pathname === item.url}
                     tooltip={item.title}
                   >
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+                  <Link href={item.url}>
+                      <item.icon className="text-sidebar-foreground" />
+                      <span className="group-data-[collapsible=icon]:hidden text-sidebar-foreground">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

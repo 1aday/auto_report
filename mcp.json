@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "/Users/amir/.supabase-mcp/.venv/bin/supabase-mcp-server",
+      "args": [],
+      "env": {
+        "SUPABASE_PROJECT_REF": "pyzcfurojinjajiknlyc",
+        "SUPABASE_DB_URL": "postgresql://postgres:A2m5i7r4@db.pyzcfurojinjajiknlyc.supabase.co:5432/postgres",
+        "SUPABASE_DB_PASSWORD": "A2m5i7r4",
+        "SUPABASE_REGION": "us-east-1",
+        "SUPABASE_SERVICE_ROLE_KEY": "sbp_16061fbe0878f067c613e536d8cecd427731fc3a",
+        "SUPABASE_ACCESS_TOKEN": "sbp_16061fbe0878f067c613e536d8cecd427731fc3a"
+      }
+    }
+  }
+}

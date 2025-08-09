@@ -24,8 +24,8 @@ const formatPercentage = (value: number | null | undefined) => {
 
 const getPercentageColor = (value: number | null | undefined) => {
   if (value === null || value === undefined) return "text-muted-foreground"
-  if (value > 0) return "text-green-600 dark:text-green-400"
-  if (value < 0) return "text-red-600 dark:text-red-400"
+  if (value > 0) return "text-emerald-600 dark:text-emerald-400"
+  if (value < 0) return "text-destructive"
   return "text-muted-foreground"
 }
 
@@ -46,7 +46,7 @@ interface StyledMetricCardProps {
   vs12WeekPct?: number | null
   historicalData?: number[]
   icon: React.ElementType
-  color?: "primary" | "blue" | "purple"
+  color?: "primary" | "blue" | "purple" | "indigo" | "teal" | "amber" | "rose" | "emerald" | "violet"
   subtitle?: string
   showProgress?: boolean
   progressValue?: number
@@ -71,9 +71,40 @@ export function StyledMetricCard({
   weekStart
 }: StyledMetricCardProps) {
   const colorClasses = {
-    primary: "from-primary/20 to-primary/10 border-primary/30",
-    blue: "from-blue-500/20 to-blue-500/10 border-blue-500/30",
-    purple: "from-purple-500/20 to-purple-500/10 border-purple-500/30",
+    primary: "from-primary/35 to-primary/12 border-primary/45",
+    blue: "from-blue-500/35 to-blue-500/12 border-blue-500/45",
+    purple: "from-purple-500/35 to-purple-500/14 border-purple-500/45",
+    indigo: "from-indigo-500/35 to-indigo-500/14 border-indigo-500/45",
+    teal: "from-teal-500/25 to-teal-500/8 border-teal-500/30",
+    amber: "from-amber-500/25 to-amber-500/8 border-amber-500/30",
+    rose: "from-rose-500/35 to-rose-500/14 border-rose-500/45",
+    emerald: "from-emerald-500/45 to-emerald-500/15 border-emerald-500/50",
+    violet: "from-violet-500/35 to-violet-500/14 border-violet-500/45",
+  } as const
+
+  // Progress bar color: always emerald (same green used for positive changes)
+  const universalBarGradient = "from-emerald-600 to-emerald-500"
+  const projectionBorderClasses: Record<string, string> = {
+    primary: "border-primary/40",
+    blue: "border-blue-400/50",
+    purple: "border-purple-400/50",
+    indigo: "border-indigo-400/50",
+    teal: "border-teal-400/50",
+    amber: "border-amber-400/50",
+    rose: "border-rose-400/50",
+    emerald: "border-emerald-400/50",
+    violet: "border-violet-400/50",
+  }
+  const projectionMarkerBg: Record<string, string> = {
+    primary: "bg-primary/20",
+    blue: "bg-blue-400/20",
+    purple: "bg-purple-400/20",
+    indigo: "bg-indigo-400/20",
+    teal: "bg-teal-400/20",
+    amber: "bg-amber-400/20",
+    rose: "bg-rose-400/20",
+    emerald: "bg-emerald-400/20",
+    violet: "bg-violet-400/20",
   }
   
   // For projected comparison, we'll use the same 12-week average
@@ -88,6 +119,9 @@ export function StyledMetricCard({
   const projectedTotal = shouldProject && weekStart
     ? predictWeeklyTotal(value, todayName)
     : value
+  const projComparison = shouldProject && previousValue
+    ? ((projectedTotal - previousValue) / previousValue) * 100
+    : null
   
   // Calculate projected comparisons
   const projectedVsPrev = shouldProject && previousValue
@@ -151,10 +185,10 @@ export function StyledMetricCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className={cn("relative overflow-hidden", `bg-gradient-to-br ${colorClasses[color]}`)}>
-        <CardHeader className="pb-1">
+      <Card className={cn("relative overflow-hidden gap-2", `bg-gradient-to-br ${colorClasses[color]}`)}>
+        <CardHeader className="pb-0">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-base sm:text-lg font-semibold tracking-tight text-foreground/90">
               {title}
             </CardTitle>
             <div className={cn("p-2 rounded-lg bg-background/50 backdrop-blur-sm")}>
@@ -162,77 +196,36 @@ export function StyledMetricCard({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-2">
-          <div className="space-y-3">
+        <CardContent className="pt-0">
+          <div className="space-y-0">
             <div>
-              <div className="text-3xl font-bold tabular-nums">
+              <div className="text-display font-bold tabular-nums mt-0">
                 {formatNumber(value)}
               </div>
-              {(subtitle || (shouldProject && projectedTotal !== value)) && (
-                <div className="text-xs text-muted-foreground mt-1">
-                  {subtitle}
-                  {shouldProject && projectedTotal !== value && (
-                    <span className="ml-2">
-                      Projected: <span className="font-medium text-foreground">{formatNumber(projectedTotal)}</span>
-                    </span>
-                  )}
-                </div>
-              )}
+              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-caption">
+                {shouldProject && (
+                  <div className="text-muted-foreground">
+                    Projected: <span className={cn("font-medium", projComparison !== null && projComparison >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive")}>{formatNumber(projectedTotal)}</span>
+                  </div>
+                )}
+                {previousValue !== null && previousValue !== undefined && (
+                  <div className="text-muted-foreground">
+                    Last week: <span className="font-medium text-foreground">{formatNumber(previousValue)}</span>
+                  </div>
+                )}
+                {subtitle && (
+                  <div className="text-muted-foreground">{subtitle}</div>
+                )}
+              </div>
             </div>
             
             {(showProgress || shouldProject) && (
               <div className="mt-3 space-y-3">
-                {/* Progress header with key metrics */}
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-muted-foreground">
-                      {getWeekProgressLabel(progressValue)}
-                    </span>
-                    <span className="font-medium text-foreground">
-                      {progressValue === 100 ? 'Week 100% complete' : 
-                       progressValue > 0 ? `Week ${Math.round(progressValue)}% complete` : 
-                       'Week not started'}
-                    </span>
-                  </div>
-                  
-                  {/* Key comparison metrics */}
-                  {previousValue && progressValue > 0 && (
-                    <div className="flex justify-between text-[10px] text-muted-foreground">
-                      <span>
-                        At this point last week: {formatNumber(previousValue * (progressValue / 100))}
-                      </span>
-                      <span className={cn(
-                        "font-medium",
-                        value > previousValue * (progressValue / 100) ? "text-primary" : "text-destructive"
-                      )}>
-                        {(() => {
-                          const lastWeekAtThisPoint = previousValue * (progressValue / 100)
-                          const absDiff = value - lastWeekAtThisPoint
-                          if (lastWeekAtThisPoint === 0) return value > 0 ? `↑ +${formatNumber(value)} (new)` : "—"
-                          const pctDiff = ((value - lastWeekAtThisPoint) / lastWeekAtThisPoint) * 100
-                          return `${value > lastWeekAtThisPoint ? "↑" : "↓"} ${formatNumber(Math.abs(absDiff))} (${Math.abs(Math.round(pctDiff))}%)`
-                        })()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                
+                {/* Progress bar only */}
                 {/* The Perfect Progress Bar - Clean & Stunning */}
                 <div className="space-y-2">
-                  {/* Labels above the bar */}
-                  <div className="flex justify-between items-center text-[11px]">
-                    <div className="text-muted-foreground">
-                      Last week: <span className="font-medium text-foreground">{formatNumber(previousValue || 0)}</span>
-                    </div>
-                    {shouldProject && (
-                      <div className="text-muted-foreground">
-                        Proj: <span className="font-medium text-primary">{formatNumber(projectedTotal)}</span>
-                      </div>
-                    )}
-                  </div>
-                  
                   {/* Progress bar container */}
-                  <div className="relative h-8 bg-gradient-to-r from-background to-muted/20 rounded-full overflow-hidden border border-border/30 shadow-inner">
+                  <div className="relative h-6 sm:h-7 md:h-8 bg-gradient-to-r from-background to-muted/20 rounded-full overflow-hidden border border-border/30 shadow-inner">
                     {(() => {
                       const maxValue = Math.max(previousValue || 0, projectedTotal, value) * 1.15
                       const scale = (val: number) => (val / maxValue) * 100
@@ -250,10 +243,9 @@ export function StyledMetricCard({
                           {/* Current week progress bar - same height as previous week */}
                           <motion.div 
                             className={cn(
-                              "absolute inset-y-[25%] left-0 rounded-r",
-                              previousValue && value > previousValue 
-                                ? "bg-gradient-to-r from-primary/90 to-primary shadow-lg shadow-primary/20" 
-                                : "bg-gradient-to-r from-destructive/80 to-destructive/90 shadow-lg shadow-destructive/20"
+                              "absolute inset-y-[25%] left-0 rounded-r bg-gradient-to-r shadow-lg",
+                              universalBarGradient,
+                              "shadow-emerald-600/20"
                             )}
                             initial={{ width: 0 }}
                             animate={{ width: `${scale(value)}%` }}
@@ -263,7 +255,7 @@ export function StyledMetricCard({
                           {/* Dotted projection extension - aligned with bars */}
                           {shouldProject && projectedTotal > value && (
                             <div 
-                              className="absolute inset-y-[25%] border-2 border-dashed border-primary/40 rounded-r"
+                              className={cn("absolute inset-y-[25%] border-2 border-dashed rounded-r", projectionBorderClasses[color] || "border-primary/40")}
                               style={{ 
                                 left: `${scale(value)}%`,
                                 width: `${scale(projectedTotal - value)}%`,
@@ -280,31 +272,32 @@ export function StyledMetricCard({
                             />
                           )}
                           
-                          {shouldProject && projectedTotal !== value && (
-                            <div 
-                              className="absolute top-0 bottom-0 w-0.5 bg-primary/20 z-10"
-                              style={{ left: `${scale(projectedTotal)}%` }}
-                            />
-                          )}
+                          {/* Remove projected vertical marker; keep only last week's reference line */}
                           
-                          {/* Current value label - positioned outside */}
-                          <div 
-                            className="absolute top-1/2 -translate-y-1/2 transition-all duration-800"
-                            style={{ 
-                              left: `${Math.min(scale(value) + 2, 95)}%`,
-                            }}
-                          >
-                            <span className="text-[10px] font-bold text-foreground bg-background/90 px-1 py-0.5 rounded backdrop-blur-sm">
-                              {formatNumber(value)}
-                            </span>
-                          </div>
+                          {/* Removed numeric label inside bar to avoid duplication */}
                         </>
                       )
                     })()}
                   </div>
                   
+                  {/* Legend below the bar */}
+                  <div className="mt-1 flex items-center gap-4 text-micro text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-block h-1.5 w-5 rounded-full bg-emerald-500/80"></span>
+                      <span>Current</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-block w-5 h-0 border-t-2 border-dashed border-emerald-500/70 translate-y-[1px]"></span>
+                      <span>Projected</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-block h-1.5 w-5 rounded-full bg-slate-400/40"></span>
+                      <span>Last week</span>
+                    </div>
+                  </div>
+
                   {/* Day labels with current day highlight */}
-                  <div className="flex text-[9px]">
+                  <div className="flex text-[9px] sm:text-[10px]">
                     {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => (
                       <div 
                         key={day} 
@@ -324,13 +317,13 @@ export function StyledMetricCard({
                 {/* Status message - Clean & Separated */}
                 {shouldProject && (
                   <div className="mt-2 px-2 py-1.5 bg-background/80 backdrop-blur-sm rounded-lg border border-border/30">
-                    <div className="text-[11px] text-center">
+                    <div className="text-[10px] sm:text-xs text-center">
                       {(() => {
                         const projComparison = (previousValue && previousValue > 0) ? 
                           ((projectedTotal - previousValue) / previousValue) * 100 : 0
                         
                         const icon = projComparison > 5 ? '↑' : projComparison > -5 ? '→' : '↓'
-                        const colorClass = projComparison > 0 ? 'text-primary font-semibold' : projComparison > -5 ? 'text-muted-foreground' : 'text-destructive font-medium'
+                        const colorClass = projComparison > 0 ? 'text-emerald-500 font-semibold' : projComparison > -5 ? 'text-muted-foreground' : 'text-destructive font-medium'
                         
                         return (
                           <span className={colorClass}>
@@ -479,8 +472,8 @@ export function StyledMetricCard({
                   <span>Last week: {formatNumber(previousValue)}</span>
                   {shouldProject && projectedTotal !== value && (
                     <Badge 
-                      variant={projectedTotal > previousValue ? "default" : "secondary"} 
-                      className="text-[10px] px-1.5 py-0"
+                      variant={projectedTotal > previousValue ? "default" : "destructive"} 
+                      className={cn("text-[10px] px-1.5 py-0", projectedTotal > previousValue ? "bg-emerald-600 text-white border-transparent" : "")}
                     >
                       <Sparkles className="h-2 w-2 mr-0.5" />
                       {projectedTotal > previousValue ? "Ahead" : "Behind"}

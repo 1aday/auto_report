@@ -320,17 +320,17 @@ const getHeatMapBgColor = (value: number | null) => {
   if (value === null) return "transparent"
   const absValue = Math.abs(value)
   if (value > 0) {
-    // Green shades for positive
-    if (absValue > 20) return "rgba(34, 197, 94, 0.5)"
-    if (absValue > 10) return "rgba(34, 197, 94, 0.4)"
-    if (absValue > 5) return "rgba(34, 197, 94, 0.3)"
-    return "rgba(34, 197, 94, 0.2)"
+    // Brighter green shades for positive
+    if (absValue > 20) return "rgba(34, 197, 94, 0.65)"   // emerald-500
+    if (absValue > 10) return "rgba(34, 197, 94, 0.55)"
+    if (absValue > 5) return "rgba(34, 197, 94, 0.45)"
+    return "rgba(34, 197, 94, 0.35)"
   } else if (value < 0) {
-    // Red shades for negative
-    if (absValue > 20) return "rgba(239, 68, 68, 0.5)"
-    if (absValue > 10) return "rgba(239, 68, 68, 0.4)"
-    if (absValue > 5) return "rgba(239, 68, 68, 0.3)"
-    return "rgba(239, 68, 68, 0.2)"
+    // Brighter red shades for negative
+    if (absValue > 20) return "rgba(239, 68, 68, 0.65)"   // rose-500
+    if (absValue > 10) return "rgba(239, 68, 68, 0.55)"
+    if (absValue > 5) return "rgba(239, 68, 68, 0.45)"
+    return "rgba(239, 68, 68, 0.35)"
   }
   return "transparent"
 }
