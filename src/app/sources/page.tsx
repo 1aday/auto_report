@@ -50,6 +50,11 @@ const formatNumber = (num: number) => new Intl.NumberFormat('en-US').format(num)
 export default function SourcesReport() {
   const pathname = usePathname()
   const isMonthly = pathname?.includes('/sources-monthly')
+  const periodLabel = isMonthly ? 'Monthly' : 'Weekly'
+  const prevShortLabel = isMonthly ? 'mo' : 'wk'
+  const deltaShortLabel = isMonthly ? 'MoM' : 'WoW'
+  const midWindowLabel = isMonthly ? '3M' : '4W'
+  const longWindowLabel = isMonthly ? '12M' : '12W'
   const queryClient = useQueryClient()
   const { data, isLoading, error } = useQuery({
     queryKey: ["source-changes-pct", isMonthly ? 'monthly' : 'weekly'],
@@ -175,10 +180,11 @@ export default function SourcesReport() {
   }
 
   const refreshTop40 = async () => {
-    await fetch('/api/refresh-top40', { method: 'POST' })
+    const path = isMonthly ? '/api/refresh-top40-monthly' : '/api/refresh-top40'
+    await fetch(path, { method: 'POST' })
     // Refetch supabase data after refresh
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["weekly-source-changes-pct"] }),
+      queryClient.invalidateQueries({ queryKey: ["source-changes-pct", isMonthly ? 'monthly' : 'weekly'] }),
       queryClient.invalidateQueries({ queryKey: ['source-series'] })
     ])
   }
@@ -231,7 +237,7 @@ export default function SourcesReport() {
   const refIdx = referenceWeek ? weeks.indexOf(referenceWeek) : -1
   const latest = referenceWeek
   const prev1 = refIdx >= 0 && refIdx + 1 < weeks.length ? weeks[refIdx + 1] : undefined
-  const prev4Slice = refIdx >= 0 ? weeks.slice(refIdx + 1, refIdx + 5) : []
+  const prev4Slice = refIdx >= 0 ? weeks.slice(refIdx + 1, refIdx + 1 + (isMonthly ? 3 : 4)) : []
   const prev12Slice = refIdx >= 0 ? weeks.slice(refIdx + 1, refIdx + 13) : []
   const pct = (cur: number, base: number) => (base > 0 ? ((cur - base) / base) * 100 : null)
 
@@ -324,25 +330,25 @@ export default function SourcesReport() {
       </CardHeader>
       <CardContent className="pt-0">
         <div className="text-3xl font-bold tabular-nums">{formatNumber(summary.current)}</div>
-        <div className="mt-1 text-[11px] text-muted-foreground">Prev wk: <span className="text-foreground font-medium">{summary.wow === null ? '—' : formatNumber(summary.last)}</span></div>
+        <div className="mt-1 text-[11px] text-muted-foreground">Prev {isMonthly ? 'mo' : 'wk'}: <span className="text-foreground font-medium">{summary.wow === null ? '—' : formatNumber(summary.last)}</span></div>
         <div className="mt-2 space-y-1.5">
           <div className="flex items-center justify-between text-[11px]">
             <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">WoW</span>
+              <span className="text-muted-foreground">{isMonthly ? 'MoM' : 'WoW'}</span>
               <Heat value={summary.wow} />
             </div>
             <span className="text-muted-foreground">{summary.wow === null ? '—' : `${summary.diffWow >= 0 ? '+' : ''}${formatNumber(Math.round(summary.diffWow))}`}</span>
           </div>
           <div className="flex items-center justify-between text-[11px]">
             <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">4W avg</span>
+              <span className="text-muted-foreground">{isMonthly ? '3M avg' : '4W avg'}</span>
               <Heat value={summary.w4} />
             </div>
             <span className="text-muted-foreground">{summary.w4 === null ? '—' : `${summary.diff4 >= 0 ? '+' : ''}${formatNumber(Math.round(summary.diff4))}`}</span>
           </div>
           <div className="flex items-center justify-between text-[11px]">
             <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">12W avg</span>
+              <span className="text-muted-foreground">{isMonthly ? '12M avg' : '12W avg'}</span>
               <Heat value={summary.w12} />
             </div>
             <span className="text-muted-foreground">{summary.w12 === null ? '—' : `${summary.diff12 >= 0 ? '+' : ''}${formatNumber(Math.round(summary.diff12))}`}</span>
@@ -353,15 +359,15 @@ export default function SourcesReport() {
             <div className="text-[11px] text-muted-foreground mb-1">Conv % ({title.toLowerCase()})</div>
             <div className="grid grid-cols-3 gap-2 text-[11px]">
               <div className="text-center">
-                <div className="text-muted-foreground">WoW</div>
+                <div className="text-muted-foreground">{isMonthly ? 'MoM' : 'WoW'}</div>
                 <Heat value={selectedConvSummary.wow} precision={2} />
               </div>
               <div className="text-center">
-                <div className="text-muted-foreground">4W</div>
+                <div className="text-muted-foreground">{isMonthly ? '3M' : '4W'}</div>
                 <Heat value={selectedConvSummary.w4} precision={2} />
               </div>
               <div className="text-center">
-                <div className="text-muted-foreground">12W</div>
+                <div className="text-muted-foreground">{isMonthly ? '12M' : '12W'}</div>
                 <Heat value={selectedConvSummary.w12} precision={2} />
               </div>
             </div>
@@ -421,7 +427,7 @@ export default function SourcesReport() {
       <div className="w-full bg-card rounded border border-border/20">
         <div className="flex items-center justify-between px-3 pt-2 pb-1">
           <div className="flex items-center gap-2">
-            <div className="text-sm font-semibold">Weekly Volume</div>
+            <div className="text-sm font-semibold">{periodLabel} Volume</div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: col.base }} />
               <span>{eventLabel}</span>
@@ -470,7 +476,7 @@ export default function SourcesReport() {
                 {/* x tick label every 2 bars */}
                 {i % 2 === 0 && (
                   <text x={x + barWidth / 2} y={margin.top + chartHeight + 14} textAnchor="middle" fontSize={9} fill="currentColor" opacity={0.6}>
-                    {(() => { const d = new Date(s.week_start); const w = getISOWeek(d); return `W${String(w).padStart(2,'0')}` })()}
+                    {(() => { const d = new Date(s.week_start); return isMonthly ? format(d, "MMM ''yy") : `W${String(getISOWeek(d)).padStart(2,'0')}` })()}
                   </text>
                 )}
               </g>
@@ -534,7 +540,7 @@ export default function SourcesReport() {
       <div className="w-full bg-card rounded border border-border/20">
         <div className="flex items-center justify-between px-3 pt-2 pb-1">
           <div className="flex items-center gap-2">
-            <div className="text-sm font-semibold">Weekly Conversion</div>
+            <div className="text-sm font-semibold">{periodLabel} Conversion</div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: col.base }} />
               <span>{eventLabel} / Sessions</span>
@@ -579,7 +585,7 @@ export default function SourcesReport() {
                 )}
                 {i % 2 === 0 && (
                   <text x={x + barWidth / 2} y={margin.top + chartHeight + 14} textAnchor="middle" fontSize={9} fill="currentColor" opacity={0.6}>
-                    {(() => { const d = new Date(s.week_start); const w = getISOWeek(d); return `W${String(w).padStart(2,'0')}` })()}
+                    {(() => { const d = new Date(s.week_start); return isMonthly ? format(d, "MMM ''yy") : `W${String(getISOWeek(d)).padStart(2,'0')}` })()}
                   </text>
                 )}
               </g>
@@ -663,8 +669,8 @@ export default function SourcesReport() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="current">Current week</SelectItem>
-              <SelectItem value="lastFinished">Last finished week</SelectItem>
+              <SelectItem value="current">{isMonthly ? 'Current month' : 'Current week'}</SelectItem>
+              <SelectItem value="lastFinished">{isMonthly ? 'Last finished month' : 'Last finished week'}</SelectItem>
               <SelectItem value="allTime">All time</SelectItem>
             </SelectContent>
           </Select>
@@ -822,14 +828,14 @@ export default function SourcesReport() {
 
       <Card className="overflow-hidden">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg">Weekly Source Changes (%)</CardTitle>
+          <CardTitle className="text-lg">{isMonthly ? 'Monthly' : 'Weekly'} Source Changes (%)</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-auto max-h-[70vh]">
             <table className="w-full">
               <thead className="sticky top-0 z-10 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
                 <tr className="border-b bg-muted/20">
-                  <th className="text-left px-3 py-2 text-xs font-semibold">Week</th>
+                  <th className="text-left px-3 py-2 text-xs font-semibold">{isMonthly ? 'Month' : 'Week'}</th>
                   <th className="text-left px-3 py-2 text-xs font-semibold">Source</th>
                   <th className="text-right px-2 py-2 text-xs font-semibold">Sessions</th>
                   <th className="text-right px-2 py-2 text-xs font-semibold">First Visit</th>
@@ -851,12 +857,12 @@ export default function SourcesReport() {
                   <React.Fragment key={week}>
                     <tr className="bg-primary/5 text-primary-foreground/90">
                       <td className="px-3 py-2 text-sm font-semibold" colSpan={15}>
-                        {format(new Date(week), "MMM dd, yyyy")} — {rowsByWeek[week].length} sources
+                        {isMonthly ? format(new Date(week), "MMMM yyyy") : format(new Date(week), "MMM dd, yyyy")} — {rowsByWeek[week].length} sources
                       </td>
                     </tr>
                     {applySort(rowsByWeek[week] || []).map(r => (
                       <tr key={`${week}-${r.session_source}`} className="border-b border-border/20 hover:bg-muted/10">
-                        <td className="px-3 py-2 text-xs text-muted-foreground">{format(new Date(week), "yyyy-'W'II")}</td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground">{isMonthly ? format(new Date(week), "MMM yyyy") : format(new Date(week), "yyyy-'W'II")}</td>
                         <td className="px-3 py-2 text-sm">{r.session_source}</td>
                         <td className="px-2 py-2 text-right tabular-nums font-medium">{r.sessions.toLocaleString()}</td>
                         <td className="px-2 py-2 text-right tabular-nums">{r.first_visit.toLocaleString()}</td>
