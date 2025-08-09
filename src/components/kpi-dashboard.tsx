@@ -152,22 +152,22 @@ const formatPercentage = (value: number | null | undefined) => {
   return formatted
 }
 
-// Get background heat map color for percentage
+// Get background heat map color for percentage (more vibrant)
 const getHeatMapBgColor = (value: number | null | undefined) => {
   if (value === null || value === undefined) return "transparent"
   const absValue = Math.abs(value)
   if (value > 0) {
-    // Green shades for positive
-    if (absValue > 20) return "rgba(34, 197, 94, 0.5)" // green-500
-    if (absValue > 10) return "rgba(34, 197, 94, 0.4)"
-    if (absValue > 5) return "rgba(34, 197, 94, 0.3)"
-    return "rgba(34, 197, 94, 0.2)"
+    // Brighter emerald tones
+    if (absValue > 20) return "rgba(16, 185, 129, 0.65)" // emerald-500
+    if (absValue > 10) return "rgba(16, 185, 129, 0.55)"
+    if (absValue > 5) return "rgba(16, 185, 129, 0.45)"
+    return "rgba(16, 185, 129, 0.35)"
   } else if (value < 0) {
-    // Red shades for negative
-    if (absValue > 20) return "rgba(129, 68, 68, 0.5)" // red-500
-    if (absValue > 10) return "rgba(129, 68, 68, 0.4)"
-    if (absValue > 5) return "rgba(129, 68, 68, 0.3)"
-    return "rgba(129, 68, 68, 0.2)"
+    // Brighter rose tones
+    if (absValue > 20) return "rgba(244, 63, 94, 0.65)" // rose-500
+    if (absValue > 10) return "rgba(244, 63, 94, 0.55)"
+    if (absValue > 5) return "rgba(244, 63, 94, 0.45)"
+    return "rgba(244, 63, 94, 0.35)"
   }
   return "transparent"
 }
