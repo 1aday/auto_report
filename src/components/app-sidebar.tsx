@@ -55,6 +55,11 @@ const menuItems = [
     url: "/sources",
     icon: LineChart,
   },
+  {
+    title: "Sources Monthly",
+    url: "/sources-monthly",
+    icon: BarChart3,
+  },
 ]
 
 export function AppSidebar() {
