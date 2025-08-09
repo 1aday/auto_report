@@ -921,11 +921,11 @@ const DataTable = ({ data }: { data: WeeklyData[] }) => {
                     <th
                       key={header.id}
                         className={cn(
-                        isFirstColumn ? "px-3 py-2.5 text-left font-medium text-xs" : "px-2 py-1.5 text-left font-medium text-xs",
+                          isFirstColumn ? "px-3 py-2.5 text-left font-semibold text-xs tracking-wide" : "px-2 py-1.5 text-left font-semibold text-xs tracking-wide",
                         isFirstColumn && "border-r border-border/10",
-                          isSessionsGroup && "bg-muted/20",
-                          isSignupsGroup && "bg-muted/20",
-                          isDemosGroup && "bg-muted/20",
+                          isSessionsGroup && "bg-teal-900/30 text-teal-300",
+                          isSignupsGroup && "bg-violet-900/30 text-violet-300",
+                          isDemosGroup && "bg-amber-900/30 text-amber-200",
                         isConversionsGroup && "bg-emerald-500/5",
                           idx === 4 && "border-r border-border/20",
                           idx === 8 && "border-r border-border/20",

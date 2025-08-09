@@ -78,22 +78,22 @@ const formatPercentage = (value: number | null) => {
   return formatted
 }
 
-// Get background heat map color for percentage
+// Get background heat map color for percentage (brighter but tasteful)
 const getHeatMapBgColor = (value: number | null) => {
   if (value === null) return "transparent"
   const absValue = Math.abs(value)
   if (value > 0) {
-    // Green shades for positive
-    if (absValue > 20) return "rgba(34, 197, 94, 0.5)"
-    if (absValue > 10) return "rgba(34, 197, 94, 0.4)"
-    if (absValue > 5) return "rgba(34, 197, 94, 0.3)"
-    return "rgba(34, 197, 94, 0.2)"
+    // Brighter greens (emerald)
+    if (absValue > 20) return "rgba(16, 185, 129, 0.65)"  // emerald-500
+    if (absValue > 10) return "rgba(16, 185, 129, 0.55)"
+    if (absValue > 5) return "rgba(16, 185, 129, 0.45)"
+    return "rgba(16, 185, 129, 0.35)"
   } else if (value < 0) {
-    // Red shades for negative
-    if (absValue > 20) return "rgba(239, 68, 68, 0.5)"
-    if (absValue > 10) return "rgba(239, 68, 68, 0.4)"
-    if (absValue > 5) return "rgba(239, 68, 68, 0.3)"
-    return "rgba(239, 68, 68, 0.2)"
+    // Brighter reds (rose)
+    if (absValue > 20) return "rgba(244, 63, 94, 0.65)"    // rose-500
+    if (absValue > 10) return "rgba(244, 63, 94, 0.55)"
+    if (absValue > 5) return "rgba(244, 63, 94, 0.45)"
+    return "rgba(244, 63, 94, 0.35)"
   }
   return "transparent"
 }
@@ -231,20 +231,20 @@ export function SimplifiedGA4Dashboard() {
                 <tr className="border-b bg-muted/20">
                   <th className="text-left px-3 py-2 font-medium text-xs border-r border-border/10">Week</th>
                   {/* Sessions columns */}
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/10">Sessions</th>
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/10">WoW</th>
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/10">4W</th>
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/20">12W</th>
+                  <th className="text-right px-2 py-2 font-semibold text-xs tracking-wide bg-teal-900/30 text-teal-300 border-r border-border/10">Sessions</th>
+                  <th className="text-right px-2 py-2 font-semibold text-xs tracking-wide bg-teal-900/30 text-teal-300 border-r border-border/10">WoW</th>
+                  <th className="text-right px-2 py-2 font-semibold text-xs tracking-wide bg-teal-900/30 text-teal-300 border-r border-border/10">4W</th>
+                  <th className="text-right px-2 py-2 font-semibold text-xs tracking-wide bg-teal-900/30 text-teal-300 border-r border-border/20">12W</th>
                   {/* Signups columns */}
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/10">Signups</th>
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/10">WoW</th>
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/10">4W</th>
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/20">12W</th>
+                  <th className="text-right px-2 py-2 font-semibold text-xs tracking-wide bg-violet-900/30 text-violet-300 border-r border-border/10">Signups</th>
+                  <th className="text-right px-2 py-2 font-semibold text-xs tracking-wide bg-violet-900/30 text-violet-300 border-r border-border/10">WoW</th>
+                  <th className="text-right px-2 py-2 font-semibold text-xs tracking-wide bg-violet-900/30 text-violet-300 border-r border-border/10">4W</th>
+                  <th className="text-right px-2 py-2 font-semibold text-xs tracking-wide bg-violet-900/30 text-violet-300 border-r border-border/20">12W</th>
                   {/* Demos columns */}
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/10">Demos</th>
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/10">WoW</th>
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/10">4W</th>
-                  <th className="text-right px-2 py-2 font-medium text-xs bg-muted/20 border-r border-border/20">12W</th>
+                  <th className="text-right px-2 py-2 font-semibold text-xs tracking-wide bg-amber-900/30 text-amber-200 border-r border-border/10">Demos</th>
+                  <th className="text-right px-2 py-2 font-semibold text-xs tracking-wide bg-amber-900/30 text-amber-200 border-r border-border/10">WoW</th>
+                  <th className="text-right px-2 py-2 font-semibold text-xs tracking-wide bg-amber-900/30 text-amber-200 border-r border-border/10">4W</th>
+                  <th className="text-right px-2 py-2 font-semibold text-xs tracking-wide bg-amber-900/30 text-amber-200 border-r border-border/20">12W</th>
                   {/* Conversion columns */}
                   <th className="text-right px-2 py-2 font-medium text-xs bg-emerald-500/5 border-r border-border/10">Signup %</th>
                   <th className="text-right px-2 py-2 font-medium text-xs bg-emerald-500/5">Demo %</th>

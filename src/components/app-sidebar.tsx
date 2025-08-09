@@ -45,11 +45,6 @@ import {
 // Menu items
 const menuItems = [
   {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: Home,
-  },
-  {
     title: "KPI Dashboard",
     url: "/kpi",
     icon: TrendingUp,
