@@ -4,10 +4,7 @@ import React from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select"
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
-import { Skeleton } from "@/components/ui/skeleton"
 import { format } from "date-fns"
 import { isCurrentWeek as checkIsCurrentWeek } from "@/lib/week-progress"
 
@@ -42,18 +39,18 @@ const Heat = ({ value, precision = 1 }: { value: number | null, precision?: numb
 }
 
 export default function CampaignReport() {
-  const queryClient = useQueryClient()
+  // No queryClient needed here
 
   const [selectedEvent, setSelectedEvent] = React.useState<'demo_submit' | 'vf_signup'>('demo_submit')
   const [selectedCampaigns, setSelectedCampaigns] = React.useState<string[]>([])
-  const [campaignFilterText, setCampaignFilterText] = React.useState("")
+  // Search field is not used yet; keep future-proofed if needed
   const [referenceMode, setReferenceMode] = React.useState<'current' | 'lastFinished' | 'allTime'>('current')
   const [quickFilter, setQuickFilter] = React.useState<string>('all')
   const [hoverIndex, setHoverIndex] = React.useState<number | null>(null)
   const [hoverIndexConv, setHoverIndexConv] = React.useState<number | null>(null)
 
   // Fetch weekly campaign data (sessions, demos, signups)
-  const { data, isLoading, error } = useQuery({
+  const { data } = useQuery({
     queryKey: ["weekly-campaigns"],
     queryFn: async () => {
       // PostgREST caps at ~1000 rows per request. Try paginated fetch; fallback to single-page if needed.
@@ -73,7 +70,7 @@ export default function CampaignReport() {
           if (page.length < pageSize) break
           from += pageSize
         }
-      } catch (e) {
+       } catch {
         // Ignore and try simple one-shot fetch as a fallback
       }
       if (rawAll.length === 0) {
@@ -389,8 +386,8 @@ export default function CampaignReport() {
     entries.sort((a, b) => b.sessions - a.sessions)
     return entries
   }, [campaignTotals])
-  const allCampaigns = React.useMemo(() => baseCampaigns.map(e => e.campaign), [baseCampaigns])
-  const filteredCampaigns = React.useMemo(() => baseCampaigns.filter(e => e.campaign.toLowerCase().includes(campaignFilterText.toLowerCase())).map(e => e.campaign), [baseCampaigns, campaignFilterText])
+  // const allCampaigns = React.useMemo(() => baseCampaigns.map(e => e.campaign), [baseCampaigns])
+  // const filteredCampaigns = React.useMemo(() => baseCampaigns.filter(e => e.campaign.toLowerCase().includes(campaignFilterText.toLowerCase())).map(e => e.campaign), [baseCampaigns, campaignFilterText])
   const top20Campaigns = React.useMemo(() => baseCampaigns.slice(0, 20), [baseCampaigns])
 
   return (

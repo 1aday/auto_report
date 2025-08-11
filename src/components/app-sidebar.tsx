@@ -4,17 +4,7 @@ import * as React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import {
-  Home,
-  BarChart3,
-  TrendingUp,
-  ChartBar,
-  Layers,
-  Activity,
-  User,
-  RefreshCw,
-  LineChart,
-} from "lucide-react"
+import { BarChart3, TrendingUp, User, RefreshCw, LineChart } from "lucide-react"
 
 import {
   Sidebar,

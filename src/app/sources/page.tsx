@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
-import { Skeleton } from "@/components/ui/skeleton"
+// import { Skeleton } from "@/components/ui/skeleton"
 import { format } from "date-fns"
 import { usePathname, useRouter } from "next/navigation"
 import { isCurrentWeek as checkIsCurrentWeek } from "@/lib/week-progress"
@@ -57,7 +57,7 @@ export default function SourcesReport() {
   const midWindowLabel = isMonthly ? '3M' : '4W'
   const longWindowLabel = isMonthly ? '12M' : '12W'
   const queryClient = useQueryClient()
-  const { data, isLoading, error } = useQuery({
+  const { data } = useQuery({
     queryKey: ["source-changes-pct", isMonthly ? 'monthly' : 'weekly'],
     queryFn: async () => {
       if (isMonthly) {
@@ -77,7 +77,7 @@ export default function SourcesReport() {
 
         if (error) throw error
         // Map to weekly-shaped Row for reuse
-        const mapped = (data || []).map((r: any) => ({
+        const mapped = (data || []).map((r: { month_start: string; session_source: string; sessions: number; first_visit: number; demo_submit: number; vf_signup: number; first_visit_mom_pct: number | null; demo_submit_mom_pct: number | null; vf_signup_mom_pct: number | null; first_visit_mo3m_pct: number | null; demo_submit_mo3m_pct: number | null; vf_signup_mo3m_pct: number | null; first_visit_mo12m_pct: number | null; demo_submit_mo12m_pct: number | null; vf_signup_mo12m_pct: number | null; }) => ({
           week_start: r.month_start,
           session_source: r.session_source,
           sessions: r.sessions,
