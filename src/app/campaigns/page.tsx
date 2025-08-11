@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select"
@@ -56,7 +56,7 @@ export default function CampaignReport() {
       // PostgREST caps at ~1000 rows per request. Try paginated fetch; fallback to single-page if needed.
       const pageSize = 1000
       let from = 0
-      const rawAll: any[] = []
+      const rawAll: { week_start: string; camp: string | null; sessions: number; demo_submit: number; vf_signup: number }[] = []
       try {
         for (let guard = 0; guard < 100; guard++) {
           const { data: page, error } = await supabase
@@ -83,7 +83,7 @@ export default function CampaignReport() {
         if (onePage) rawAll.push(...onePage)
       }
       type Raw = { week_start: string; camp: string | null; sessions: number; demo_submit: number; vf_signup: number }
-      const raw = (rawAll || []) as unknown as Raw[]
+      const raw = (rawAll || []) as Raw[]
       const normalizeDate = (s: string) => (typeof s === 'string' ? s.split('T')[0] : s as any)
       // Build weeks desc and campaigns
       const weeksDesc = Array.from(new Set(raw.map(r => normalizeDate(r.week_start)))).sort((a,b) => (a < b ? 1 : -1))

@@ -77,7 +77,8 @@ export default function SourcesReport() {
 
         if (error) throw error
         // Map to weekly-shaped Row for reuse
-        const mapped = (data || []).map((r: { month_start: string; session_source: string; sessions: number; first_visit: number; demo_submit: number; vf_signup: number; first_visit_mom_pct: number | null; demo_submit_mom_pct: number | null; vf_signup_mom_pct: number | null; first_visit_mo3m_pct: number | null; demo_submit_mo3m_pct: number | null; vf_signup_mo3m_pct: number | null; first_visit_mo12m_pct: number | null; demo_submit_mo12m_pct: number | null; vf_signup_mo12m_pct: number | null; }) => ({
+        type MonthlyRow = { month_start: string; session_source: string; sessions: number; first_visit: number; demo_submit: number; vf_signup: number; first_visit_mom_pct: number | null; demo_submit_mom_pct: number | null; vf_signup_mom_pct: number | null; first_visit_mo3m_pct: number | null; demo_submit_mo3m_pct: number | null; vf_signup_mo3m_pct: number | null; first_visit_mo12m_pct: number | null; demo_submit_mo12m_pct: number | null; vf_signup_mo12m_pct: number | null }
+        const mapped = (data || []).map((r: MonthlyRow) => ({
           week_start: r.month_start,
           session_source: r.session_source,
           sessions: r.sessions,
