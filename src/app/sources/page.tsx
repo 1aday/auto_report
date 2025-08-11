@@ -9,7 +9,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 import { Skeleton } from "@/components/ui/skeleton"
 import { format } from "date-fns"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { isCurrentWeek as checkIsCurrentWeek } from "@/lib/week-progress"
 
 type Row = {
@@ -49,6 +49,7 @@ const formatNumber = (num: number) => new Intl.NumberFormat('en-US').format(num)
 
 export default function SourcesReport() {
   const pathname = usePathname()
+  const router = useRouter()
   const isMonthly = pathname?.includes('/sources-monthly')
   const periodLabel = isMonthly ? 'Monthly' : 'Weekly'
   const prevShortLabel = isMonthly ? 'mo' : 'wk'
@@ -71,6 +72,7 @@ export default function SourcesReport() {
             first_visit_mo3m_pct, demo_submit_mo3m_pct, vf_signup_mo3m_pct,
             first_visit_mo12m_pct, demo_submit_mo12m_pct, vf_signup_mo12m_pct
           `)
+          .limit(50000)
           .order("month_start", { ascending: false })
 
         if (error) throw error
@@ -105,6 +107,7 @@ export default function SourcesReport() {
             first_visit_wo4w_pct, demo_submit_wo4w_pct, vf_signup_wo4w_pct,
             first_visit_wo12w_pct, demo_submit_wo12w_pct, vf_signup_wo12w_pct
           `)
+          .limit(50000)
           .order("week_start", { ascending: false })
 
         if (error) throw error
@@ -143,6 +146,10 @@ export default function SourcesReport() {
   const [hoverIndexConv, setHoverIndexConv] = React.useState<number | null>(null)
   const [referenceMode, setReferenceMode] = React.useState<'current' | 'lastFinished' | 'allTime'>('current')
   const [quickFilter, setQuickFilter] = React.useState<string>('all')
+  
+
+  // Signature of selected sources for stable memo/query keys
+  const selectedSourcesSig = React.useMemo(() => [...selectedSources].sort().join('|'), [selectedSources])
 
   // Ignore rules admin data
   type Rule = { id: number; pattern: string; is_glob: boolean; is_regex: boolean; notes: string | null }
@@ -193,13 +200,160 @@ export default function SourcesReport() {
 
   // Note: avoid early returns to keep Hook order stable
 
-  // Build a single table with Week as the first column; visually group by week
-  const weeks = React.useMemo(() => Array.from(new Set((data || []).map(r => r.week_start))).sort((a,b) => (a < b ? 1 : -1)), [data])
-  const selectedSourcesSig = React.useMemo(() => [...selectedSources].sort().join('|'), [selectedSources])
+  // Monthly pivot fetch for charts (ensures all months show, not only top-40)
+  const { data: monthlyPivotData } = useQuery({
+    queryKey: ['monthly-pivot', selectedSourcesSig, selectedEvent],
+    enabled: !!isMonthly,
+    queryFn: async () => {
+      let query = supabase
+        .from('ga4_monthly_metrics_pivot')
+        .select('month_start, session_source, sessions, first_visit, demo_submit, vf_signup')
+        .limit(50000)
+        .order('month_start', { ascending: true })
+      if (selectedSources.length > 0) {
+        query = query.in('session_source', selectedSources)
+      }
+      const { data, error } = await query
+      if (error) throw error
+      return data as { month_start: string, session_source: string, sessions: number, first_visit: number, demo_submit: number, vf_signup: number }[]
+    }
+  })
+
+  // Fallback: if monthly change view is unavailable/empty, derive rows from monthly pivot
+  const monthlyRowsFallback: Row[] = React.useMemo(() => {
+    if (!isMonthly) return []
+    const rows = monthlyPivotData || []
+    if (rows.length === 0) return []
+    // Build ordered unique month list (ascending)
+    const monthsAsc = Array.from(new Set(rows.map(r => r.month_start))).sort((a,b) => (a < b ? -1 : 1))
+    // Find most recent month that actually has any sessions
+    let refMonth: string | null = null
+    for (let i = monthsAsc.length - 1; i >= 0; i--) {
+      const m = monthsAsc[i]
+      let hasAny = false
+      for (const r of rows) {
+        if (r.month_start === m && (r.sessions || 0) > 0) { hasAny = true; break }
+      }
+      if (hasAny) { refMonth = m; break }
+    }
+    // Build Top-40 by sessions in reference month; if none, fallback to all-time top-40
+    const sessionsBySrcRef = new Map<string, number>()
+    if (refMonth) {
+      for (const r of rows) {
+        if (r.month_start === refMonth) {
+          sessionsBySrcRef.set(r.session_source, (sessionsBySrcRef.get(r.session_source) || 0) + (r.sessions || 0))
+        }
+      }
+    }
+    if (sessionsBySrcRef.size === 0) {
+      for (const r of rows) {
+        sessionsBySrcRef.set(r.session_source, (sessionsBySrcRef.get(r.session_source) || 0) + (r.sessions || 0))
+      }
+    }
+    const top40 = Array.from(sessionsBySrcRef.entries())
+      .sort((a,b) => b[1] - a[1])
+      .slice(0, 40)
+      .map(([src]) => src)
+    const topSet = new Set(top40)
+
+    // Build per-source arrays aligned to months
+    type Metric = { sessions: number; first_visit: number; demo_submit: number; vf_signup: number }
+    const metricsBySrc: Record<string, Record<string, Metric>> = {}
+    for (const r of rows) {
+      if (!metricsBySrc[r.session_source]) metricsBySrc[r.session_source] = {}
+      metricsBySrc[r.session_source][r.month_start] = {
+        sessions: r.sessions || 0,
+        first_visit: r.first_visit || 0,
+        demo_submit: r.demo_submit || 0,
+        vf_signup: r.vf_signup || 0,
+      }
+    }
+
+    const pct = (cur: number, base: number) => (base > 0 ? ((cur - base) / base) * 100 : null)
+
+    const out: Row[] = []
+    for (let mi = monthsAsc.length - 1; mi >= 0; mi--) {
+      const m = monthsAsc[mi]
+      for (const src of top40) {
+        const srcMetricsByMonth = metricsBySrc[src] || {}
+        const cur = srcMetricsByMonth[m] || { sessions: 0, first_visit: 0, demo_submit: 0, vf_signup: 0 }
+        // Previous month
+        const prevMonth = monthsAsc[mi - 1]
+        const prev = prevMonth ? (srcMetricsByMonth[prevMonth] || { sessions: 0, first_visit: 0, demo_submit: 0, vf_signup: 0 }) : { sessions: 0, first_visit: 0, demo_submit: 0, vf_signup: 0 }
+        // 3-month average (previous 3 months only)
+        const prev3 = monthsAsc.slice(Math.max(0, mi - 3), mi)
+        const avg3 = prev3.length
+          ? prev3.reduce((acc, mo) => {
+              const v = srcMetricsByMonth[mo] || { sessions: 0, first_visit: 0, demo_submit: 0, vf_signup: 0 }
+              acc.sessions += v.sessions
+              acc.first_visit += v.first_visit
+              acc.demo_submit += v.demo_submit
+              acc.vf_signup += v.vf_signup
+              return acc
+            }, { sessions: 0, first_visit: 0, demo_submit: 0, vf_signup: 0 })
+          : { sessions: 0, first_visit: 0, demo_submit: 0, vf_signup: 0 }
+        const avg3n = prev3.length || 1
+        // 12-month average (previous 12 months only)
+        const prev12 = monthsAsc.slice(Math.max(0, mi - 12), mi)
+        const avg12 = prev12.length
+          ? prev12.reduce((acc, mo) => {
+              const v = srcMetricsByMonth[mo] || { sessions: 0, first_visit: 0, demo_submit: 0, vf_signup: 0 }
+              acc.sessions += v.sessions
+              acc.first_visit += v.first_visit
+              acc.demo_submit += v.demo_submit
+              acc.vf_signup += v.vf_signup
+              return acc
+            }, { sessions: 0, first_visit: 0, demo_submit: 0, vf_signup: 0 })
+          : { sessions: 0, first_visit: 0, demo_submit: 0, vf_signup: 0 }
+        const avg12n = prev12.length || 1
+
+        out.push({
+          week_start: m,
+          session_source: src,
+          sessions: cur.sessions,
+          first_visit: cur.first_visit,
+          demo_submit: cur.demo_submit,
+          vf_signup: cur.vf_signup,
+          first_visit_wow_pct: pct(cur.first_visit, prev.first_visit),
+          demo_submit_wow_pct: pct(cur.demo_submit, prev.demo_submit),
+          vf_signup_wow_pct: pct(cur.vf_signup, prev.vf_signup),
+          first_visit_wo4w_pct: pct(cur.first_visit, avg3.first_visit / avg3n),
+          demo_submit_wo4w_pct: pct(cur.demo_submit, avg3.demo_submit / avg3n),
+          vf_signup_wo4w_pct: pct(cur.vf_signup, avg3.vf_signup / avg3n),
+          first_visit_wo12w_pct: pct(cur.first_visit, avg12.first_visit / avg12n),
+          demo_submit_wo12w_pct: pct(cur.demo_submit, avg12.demo_submit / avg12n),
+          vf_signup_wo12w_pct: pct(cur.vf_signup, avg12.vf_signup / avg12n),
+        })
+      }
+    }
+    // Only include sources in top-set; already ensured via loop
+    return out
+  }, [isMonthly, monthlyPivotData])
+
+  const dataRows: Row[] = React.useMemo(() => {
+    if (isMonthly && ((data?.length || 0) === 0)) {
+      return monthlyRowsFallback
+    }
+    return (data || [])
+  }, [isMonthly, data, monthlyRowsFallback])
+
+  // Build period buckets (weeks or months) list
+  const periodBuckets = React.useMemo(() => {
+    if (isMonthly) {
+      const source = (dataRows && dataRows.length > 0)
+        ? dataRows.map(r => r.week_start)
+        : (monthlyPivotData || []).map(r => r.month_start)
+      return Array.from(new Set(source)).sort((a,b) => (a < b ? 1 : -1))
+    }
+    return Array.from(new Set((dataRows || []).map(r => r.week_start))).sort((a,b) => (a < b ? 1 : -1))
+  }, [isMonthly, monthlyPivotData, dataRows])
+  // Alias used throughout the component
+  const weeks = periodBuckets
   const rowsByWeek = React.useMemo(() => {
     const map: Record<string, Row[]> = {}
-    for (const w of weeks) {
-      let rows = (data || []).filter(r => r.week_start === w)
+    for (const w of (periodBuckets || [])) {
+      let rows = (dataRows || []).filter(r => r.week_start === w)
+      
       if (selectedSources.length > 0) {
         const selectedSet = new Set(selectedSources)
         rows = rows.filter(r => selectedSet.has(r.session_source))
@@ -207,11 +361,11 @@ export default function SourcesReport() {
       map[w] = rows
     }
     return map
-  }, [data, weeks, selectedSourcesSig])
+  }, [dataRows, (periodBuckets || []).join('|'), selectedSourcesSig])
 
   // Aggregate totals by week across current filter
   const aggregatesByWeek: Record<string, { sessions: number; demo_submit: number; vf_signup: number }> = {}
-  for (const w of weeks) {
+  for (const w of (periodBuckets || [])) {
     const rows = rowsByWeek[w] || []
     aggregatesByWeek[w] = rows.reduce((acc, r) => {
       acc.sessions += r.sessions || 0
@@ -223,22 +377,24 @@ export default function SourcesReport() {
 
   // Determine reference week based on user selection
   const referenceWeek = React.useMemo(() => {
-    if (weeks.length === 0) return null
+    const buckets = periodBuckets || []
+    if (buckets.length === 0) return null
     if (referenceMode === 'allTime') return null
-    if (referenceMode === 'current') return weeks[0]
-    const first = weeks[0]
+    if (referenceMode === 'current') return buckets[0]
+    const first = buckets[0]
     const isCurr = isMonthly
       ? (() => { const d = new Date(first); const n = new Date(); return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() })()
       : checkIsCurrentWeek(first)
-    if (isCurr && weeks.length > 1) return weeks[1]
+    if (isCurr && buckets.length > 1) return buckets[1]
     return first
-  }, [weeks, referenceMode])
+  }, [periodBuckets, referenceMode, isMonthly])
 
-  const refIdx = referenceWeek ? weeks.indexOf(referenceWeek) : -1
+  const refIdx = referenceWeek ? (periodBuckets || []).indexOf(referenceWeek) : -1
   const latest = referenceWeek
-  const prev1 = refIdx >= 0 && refIdx + 1 < weeks.length ? weeks[refIdx + 1] : undefined
-  const prev4Slice = refIdx >= 0 ? weeks.slice(refIdx + 1, refIdx + 1 + (isMonthly ? 3 : 4)) : []
-  const prev12Slice = refIdx >= 0 ? weeks.slice(refIdx + 1, refIdx + 13) : []
+  const bucketsAll = periodBuckets || []
+  const prev1 = refIdx >= 0 && refIdx + 1 < bucketsAll.length ? bucketsAll[refIdx + 1] : undefined
+  const prev4Slice = refIdx >= 0 ? bucketsAll.slice(refIdx + 1, refIdx + 1 + (isMonthly ? 3 : 4)) : []
+  const prev12Slice = refIdx >= 0 ? bucketsAll.slice(refIdx + 1, refIdx + 13) : []
   const pct = (cur: number, base: number) => (base > 0 ? ((cur - base) / base) * 100 : null)
 
   const makeSummary = (key: 'sessions' | 'demo_submit' | 'vf_signup') => {
@@ -278,6 +434,8 @@ export default function SourcesReport() {
   const sessionsSummary = makeSummary('sessions')
   const signupsSummary = makeSummary('vf_signup')
   const demosSummary = makeSummary('demo_submit')
+
+  // Campaign logic moved to its own page
 
   // Conversion summaries (selected event / sessions)
   type ConvSummary = { currentPct: number | null; wow: number | null; w4: number | null; w12: number | null }
@@ -377,15 +535,30 @@ export default function SourcesReport() {
     </Card>
   )
 
-  // Aggregate series across filtered sources for selected event
+  
+
+  // Build continuous month list and aggregate series in monthly mode; otherwise use weekly rowsByWeek
   const series = React.useMemo(() => {
-    const ascWeeks = [...weeks].sort((a,b) => (a > b ? 1 : -1))
-    return ascWeeks.map(week => {
-      const rows = rowsByWeek[week] || []
-      const count = rows.reduce((sum, r) => sum + (selectedEvent === 'first_visit' ? r.first_visit : selectedEvent === 'demo_submit' ? r.demo_submit : r.vf_signup), 0)
-      return { week_start: week, count }
-    })
-  }, [weeks.join(','), selectedEvent, selectedSourcesSig])
+    if (isMonthly) {
+      const rows = monthlyPivotData || []
+      if (rows.length === 0) return []
+      const months = Array.from(new Set(rows.map(r => r.month_start))).sort()
+      const byMonth = new Map<string, number>()
+      for (const m of months) byMonth.set(m, 0)
+      for (const r of rows) {
+        const v = selectedEvent === 'first_visit' ? r.first_visit : selectedEvent === 'demo_submit' ? r.demo_submit : r.vf_signup
+        byMonth.set(r.month_start, (byMonth.get(r.month_start) || 0) + (v || 0))
+      }
+      return months.map(m => ({ week_start: m, count: byMonth.get(m) || 0 }))
+    } else {
+      const ascWeeks = [...weeks].sort((a,b) => (a > b ? 1 : -1))
+      return ascWeeks.map(week => {
+        const rows = rowsByWeek[week] || []
+        const count = rows.reduce((sum, r) => sum + (selectedEvent === 'first_visit' ? r.first_visit : selectedEvent === 'demo_submit' ? r.demo_submit : r.vf_signup), 0)
+        return { week_start: week, count }
+      })
+    }
+  }, [isMonthly, monthlyPivotData, weeks.join(','), selectedEvent, selectedSourcesSig])
 
   const maxCount = Math.max(1, ...series.map(s => s.count))
 
@@ -489,15 +662,34 @@ export default function SourcesReport() {
 
   // Conversion series: selected event divided by sessions (as %)
   const seriesConv = React.useMemo(() => {
-    const ascWeeks = [...weeks].sort((a,b) => (a > b ? 1 : -1))
-    return ascWeeks.map(week => {
-      const rows = rowsByWeek[week] || []
-      const eventSum = rows.reduce((sum, r) => sum + (selectedEvent === 'first_visit' ? r.first_visit : selectedEvent === 'demo_submit' ? r.demo_submit : r.vf_signup), 0)
-      const sess = aggregatesByWeek[week]?.sessions || 0
-      const pct = sess > 0 ? (eventSum / sess) * 100 : 0
-      return { week_start: week, pct }
-    })
-  }, [weeks.join(','), selectedEvent, selectedSourcesSig])
+    if (isMonthly) {
+      const rows = monthlyPivotData || []
+      if (rows.length === 0) return []
+      const months = Array.from(new Set(rows.map(r => r.month_start))).sort()
+      const sums = new Map<string, { event: number, sessions: number }>()
+      for (const m of months) sums.set(m, { event: 0, sessions: 0 })
+      for (const r of rows) {
+        const ev = selectedEvent === 'first_visit' ? r.first_visit : selectedEvent === 'demo_submit' ? r.demo_submit : r.vf_signup
+        const bucket = sums.get(r.month_start)!
+        bucket.event += ev || 0
+        bucket.sessions += r.sessions || 0
+      }
+      return months.map(m => {
+        const b = sums.get(m)!
+        const pct = b.sessions > 0 ? (b.event / b.sessions) * 100 : 0
+        return { week_start: m, pct }
+      })
+    } else {
+      const ascWeeks = [...weeks].sort((a,b) => (a > b ? 1 : -1))
+      return ascWeeks.map(week => {
+        const rows = rowsByWeek[week] || []
+        const eventSum = rows.reduce((sum, r) => sum + (selectedEvent === 'first_visit' ? r.first_visit : selectedEvent === 'demo_submit' ? r.demo_submit : r.vf_signup), 0)
+        const sess = aggregatesByWeek[week]?.sessions || 0
+        const pct = sess > 0 ? (eventSum / sess) * 100 : 0
+        return { week_start: week, pct }
+      })
+    }
+  }, [isMonthly, monthlyPivotData, weeks.join(','), selectedEvent, selectedSourcesSig])
 
   const ConversionChart = () => {
     const chartHeight = 110
@@ -626,11 +818,11 @@ export default function SourcesReport() {
   // Build source totals and order by sessions desc
   const sourceTotals = React.useMemo(() => {
     const totals = new Map<string, number>()
-    for (const row of (data || [])) {
+    for (const row of (dataRows || [])) {
       totals.set(row.session_source, (totals.get(row.session_source) || 0) + (row.sessions || 0))
     }
     return totals
-  }, [data])
+  }, [dataRows])
 
   const baseSources = React.useMemo(() => {
     const entries: { source: string; sessions: number }[] = []
@@ -656,11 +848,35 @@ export default function SourcesReport() {
     <div className="space-y-6 max-w-[1400px] mx-auto px-2 md:px-3">
       <div>
         <h1 className="text-3xl font-bold text-white">Source Performance</h1>
-        <p className="text-sm text-muted-foreground">Top-40 weekly sources after ignores, with WoW / 4W / 12W changes. No projections.</p>
+        <p className="text-sm text-muted-foreground">Top-40 {isMonthly ? 'monthly' : 'weekly'} sources after ignores, with {deltaShortLabel} / {midWindowLabel} / {longWindowLabel} changes. No projections.</p>
       </div>
 
-      {/* Controls (polished): Reference → Event → Tools → Sort */}
+      {/* Controls (polished): Period (only on monthly) → Reference → Event → Tools → Sort */}
       <div className="flex flex-wrap items-center gap-3">
+        {/* Period toggle only on monthly page to allow jumping back to weekly */}
+        {isMonthly && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Period</span>
+            <div className="inline-flex rounded-md border border-border/30 overflow-hidden">
+              <Button
+                size="sm"
+                variant={'outline'}
+                className={'rounded-none'}
+                onClick={() => router.push('/sources')}
+              >
+                Weekly
+              </Button>
+              <Button
+                size="sm"
+                variant={'default'}
+                className={'rounded-none'}
+                disabled
+              >
+                Monthly
+              </Button>
+            </div>
+          </div>
+        )}
         {/* Reference */}
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Reference</span>
@@ -710,6 +926,7 @@ export default function SourcesReport() {
             </SelectContent>
           </Select>
         </div>
+        
         {/* Tools */}
         <div className="ml-auto flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={refreshTop40}>
@@ -837,7 +1054,8 @@ export default function SourcesReport() {
                 <tr className="border-b bg-muted/20">
                   <th className="text-left px-3 py-2 text-xs font-semibold">{isMonthly ? 'Month' : 'Week'}</th>
                   <th className="text-left px-3 py-2 text-xs font-semibold">Source</th>
-                  <th className="text-right px-2 py-2 text-xs font-semibold">Sessions</th>
+                      <th className="text-right px-2 py-2 text-xs font-semibold">Sessions</th>
+                      
                   <th className="text-right px-2 py-2 text-xs font-semibold">First Visit</th>
                   <th className="text-right px-2 py-2 text-xs font-semibold">WoW %</th>
                   <th className="text-right px-2 py-2 text-xs font-semibold">4W %</th>
@@ -864,7 +1082,8 @@ export default function SourcesReport() {
                       <tr key={`${week}-${r.session_source}`} className="border-b border-border/20 hover:bg-muted/10">
                         <td className="px-3 py-2 text-xs text-muted-foreground">{isMonthly ? format(new Date(week), "MMM yyyy") : format(new Date(week), "yyyy-'W'II")}</td>
                         <td className="px-3 py-2 text-sm">{r.session_source}</td>
-                        <td className="px-2 py-2 text-right tabular-nums font-medium">{r.sessions.toLocaleString()}</td>
+                         <td className="px-2 py-2 text-right tabular-nums font-medium">{r.sessions.toLocaleString()}</td>
+                         
                         <td className="px-2 py-2 text-right tabular-nums">{r.first_visit.toLocaleString()}</td>
                         <td className="px-2 py-2 text-right"><Heat value={r.first_visit_wow_pct} /></td>
                         <td className="px-2 py-2 text-right"><Heat value={r.first_visit_wo4w_pct} /></td>

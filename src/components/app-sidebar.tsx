@@ -56,6 +56,11 @@ const menuItems = [
     icon: LineChart,
   },
   {
+    title: "Campaigns Report",
+    url: "/campaigns",
+    icon: BarChart3,
+  },
+  {
     title: "Sources Monthly",
     url: "/sources-monthly",
     icon: BarChart3,

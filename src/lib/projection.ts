@@ -19,15 +19,22 @@ const HOURLY_DISTRIBUTION: number[] = [
   0.09, 0.07, 0.05, 0.04, 0.03, 0.02,  // 18:00 - 23:59 (evening decline)
 ];
 
+// Normalize hourly weights to ensure they sum to 1.0
+const HOURLY_NORMALIZED: number[] = (() => {
+  const total = HOURLY_DISTRIBUTION.reduce((s, v) => s + v, 0) || 1
+  return HOURLY_DISTRIBUTION.map(v => v / total)
+})()
+
 /**
  * Get cumulative hourly progress for a specific hour of day
  */
 function getCumulativeHourlyProgress(hour: number): number {
   let cumulative = 0;
   for (let h = 0; h <= hour; h++) {
-    cumulative += HOURLY_DISTRIBUTION[h] || 0;
+    cumulative += HOURLY_NORMALIZED[h] || 0;
   }
-  return cumulative;
+  // Clamp to [0,1]
+  return Math.max(0, Math.min(1, cumulative));
 }
 
 /**
@@ -64,10 +71,11 @@ export function predictWeeklyTotal(
   const weekProgressSoFar = previousDaysContribution + (todayFullContribution * todayProgress);
   
   // Avoid division by zero
-  if (weekProgressSoFar === 0) return cumulativeSoFar;
-  
-  // Project the total
-  return Math.round(cumulativeSoFar / weekProgressSoFar);
+  if (weekProgressSoFar <= 0) return cumulativeSoFar;
+
+  // Project the total and never let it drop below current cumulative
+  const projected = Math.round(cumulativeSoFar / weekProgressSoFar);
+  return Math.max(projected, cumulativeSoFar);
 }
 
 /**

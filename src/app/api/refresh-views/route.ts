@@ -26,6 +26,7 @@ export async function POST() {
       // List of materialized views to refresh individually
       // All views are in the analytics schema
       const viewsToRefresh = [
+        // Core weekly analytics
         { schema: 'analytics', name: 'wk_totals' },
         { schema: 'analytics', name: 'wk_by_channel' },
         { schema: 'analytics', name: 'wk_by_src_med' },
@@ -34,7 +35,14 @@ export async function POST() {
         { schema: 'analytics', name: 'weekly_deltas' },
         { schema: 'analytics', name: 'weekly_events' },
         { schema: 'analytics', name: 'weekly_sessions' },
-        { schema: 'analytics', name: 'weekly_summary' }
+        { schema: 'analytics', name: 'weekly_summary' },
+
+        // Source-specific weekly/monthly views used by the Sources pages
+        { schema: 'public', name: 'ga4_weekly_top40_sources' },
+        { schema: 'public', name: 'ga4_monthly_top40_sources' },
+        { schema: 'public', name: 'ga4_weekly_source_changes_pct' },
+        { schema: 'public', name: 'ga4_monthly_source_changes_pct' },
+        { schema: 'public', name: 'ga4_monthly_metrics_pivot' },
       ]
 
       const results = []
