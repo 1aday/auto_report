@@ -84,7 +84,7 @@ export default function CampaignReport() {
       }
       type Raw = { week_start: string; camp: string | null; sessions: number; demo_submit: number; vf_signup: number }
       const raw = (rawAll || []) as Raw[]
-      const normalizeDate = (s: string) => (typeof s === 'string' ? s.split('T')[0] : s as any)
+      const normalizeDate = (s: string) => (typeof s === 'string' ? s.split('T')[0] : (s as unknown as string))
       // Build weeks desc and campaigns
       const weeksDesc = Array.from(new Set(raw.map(r => normalizeDate(r.week_start)))).sort((a,b) => (a < b ? 1 : -1))
       const byCampWeek = new Map<string, Map<string, { sessions: number; demo_submit: number; vf_signup: number }>>()
@@ -402,7 +402,7 @@ export default function CampaignReport() {
         {/* Reference */}
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Reference</span>
-          <Select value={referenceMode} onValueChange={(v) => setReferenceMode(v as any)}>
+          <Select value={referenceMode} onValueChange={(v) => setReferenceMode(v as 'current' | 'lastFinished' | 'allTime')}>
             <SelectTrigger className="w-44">
               <SelectValue />
             </SelectTrigger>
@@ -415,7 +415,7 @@ export default function CampaignReport() {
         </div>
         {/* Event */}
         <div className="flex items-center gap-2">
-          <Select value={selectedEvent} onValueChange={(v) => setSelectedEvent(v as any)}>
+          <Select value={selectedEvent} onValueChange={(v) => setSelectedEvent(v as 'demo_submit' | 'vf_signup')}>
             <SelectTrigger className="w-36">
               <SelectValue />
             </SelectTrigger>

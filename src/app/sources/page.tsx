@@ -61,24 +61,32 @@ export default function SourcesReport() {
     queryKey: ["source-changes-pct", isMonthly ? 'monthly' : 'weekly'],
     queryFn: async () => {
       if (isMonthly) {
-        const { data, error } = await supabase
-          .from("ga4_monthly_source_changes_pct")
-          .select(`
-            month_start,
-            session_source,
-            sessions,
-            first_visit, demo_submit, vf_signup,
-            first_visit_mom_pct, demo_submit_mom_pct, vf_signup_mom_pct,
-            first_visit_mo3m_pct, demo_submit_mo3m_pct, vf_signup_mo3m_pct,
-            first_visit_mo12m_pct, demo_submit_mo12m_pct, vf_signup_mo12m_pct
-          `)
-          .limit(50000)
-          .order("month_start", { ascending: false })
-
-        if (error) throw error
-        // Map to weekly-shaped Row for reuse
+        // Paginate to bypass 1k row cap
         type MonthlyRow = { month_start: string; session_source: string; sessions: number; first_visit: number; demo_submit: number; vf_signup: number; first_visit_mom_pct: number | null; demo_submit_mom_pct: number | null; vf_signup_mom_pct: number | null; first_visit_mo3m_pct: number | null; demo_submit_mo3m_pct: number | null; vf_signup_mo3m_pct: number | null; first_visit_mo12m_pct: number | null; demo_submit_mo12m_pct: number | null; vf_signup_mo12m_pct: number | null }
-        const mapped = (data || []).map((r: MonthlyRow) => ({
+        const pageSize = 1000
+        let from = 0
+        const pages: MonthlyRow[] = []
+        for (let guard = 0; guard < 100; guard++) {
+          const { data: page, error } = await supabase
+            .from("ga4_monthly_source_changes_pct")
+            .select(`
+              month_start,
+              session_source,
+              sessions,
+              first_visit, demo_submit, vf_signup,
+              first_visit_mom_pct, demo_submit_mom_pct, vf_signup_mom_pct,
+              first_visit_mo3m_pct, demo_submit_mo3m_pct, vf_signup_mo3m_pct,
+              first_visit_mo12m_pct, demo_submit_mo12m_pct, vf_signup_mo12m_pct
+            `)
+            .order("month_start", { ascending: false })
+            .range(from, from + pageSize - 1)
+          if (error) throw error
+          if (!page || page.length === 0) break
+          pages.push(...(page as MonthlyRow[]))
+          if (page.length < pageSize) break
+          from += pageSize
+        }
+        const mapped = (pages || []).map((r: MonthlyRow) => ({
           week_start: r.month_start,
           session_source: r.session_source,
           sessions: r.sessions,
@@ -548,9 +556,11 @@ export default function SourcesReport() {
       for (const m of months) byMonth.set(m, 0)
       for (const r of rows) {
         const v = selectedEvent === 'first_visit' ? r.first_visit : selectedEvent === 'demo_submit' ? r.demo_submit : r.vf_signup
-        byMonth.set(r.month_start, (byMonth.get(r.month_start) || 0) + (v || 0))
+        const key = r.month_start
+        byMonth.set(key, (byMonth.get(key) || 0) + (v || 0))
       }
-      return months.map(m => ({ week_start: m, count: byMonth.get(m) || 0 }))
+      // Ensure unique month keys by index join
+      return months.map((m, i) => ({ week_start: m, count: byMonth.get(m) || 0, _k: `${m}-${i}` })) as unknown as { week_start: string; count: number; _k: string }[]
     } else {
       const ascWeeks = [...weeks].sort((a,b) => (a > b ? 1 : -1))
       return ascWeeks.map(week => {
@@ -675,10 +685,10 @@ export default function SourcesReport() {
         bucket.event += ev || 0
         bucket.sessions += r.sessions || 0
       }
-      return months.map(m => {
+      return months.map((m, i) => {
         const b = sums.get(m)!
         const pct = b.sessions > 0 ? (b.event / b.sessions) * 100 : 0
-        return { week_start: m, pct }
+      return { week_start: m, pct, _k: `${m}-${i}` }
       })
     } else {
       const ascWeeks = [...weeks].sort((a,b) => (a > b ? 1 : -1))
@@ -881,7 +891,7 @@ export default function SourcesReport() {
         {/* Reference */}
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Reference</span>
-          <Select value={referenceMode} onValueChange={(v) => setReferenceMode(v as any)}>
+          <Select value={referenceMode} onValueChange={(v) => setReferenceMode(v as 'current' | 'lastFinished' | 'allTime')}>
             <SelectTrigger className="w-44">
               <SelectValue />
             </SelectTrigger>
@@ -894,7 +904,7 @@ export default function SourcesReport() {
         </div>
         {/* Event */}
         <div className="flex items-center gap-2">
-          <Select value={selectedEvent} onValueChange={(v) => setSelectedEvent(v as any)}>
+          <Select value={selectedEvent} onValueChange={(v) => setSelectedEvent(v as 'first_visit' | 'demo_submit' | 'vf_signup')}>
             <SelectTrigger className="w-36">
               <SelectValue />
             </SelectTrigger>
@@ -1016,7 +1026,7 @@ export default function SourcesReport() {
           <div className="text-sm font-medium">Ignore rules</div>
           <div className="flex flex-wrap items-center gap-2">
             <input className="bg-background border px-2 py-1 rounded text-sm" placeholder="pattern (e.g. %.okta.com)" value={newPattern} onChange={e => setNewPattern(e.target.value)} />
-            <select className="bg-background border px-2 py-1 rounded text-sm" value={newType} onChange={e => setNewType(e.target.value as any)}>
+            <select className="bg-background border px-2 py-1 rounded text-sm" value={newType} onChange={e => setNewType(e.target.value as 'literal' | 'glob' | 'regex')}>
               <option value="literal">literal</option>
               <option value="glob">glob</option>
               <option value="regex">regex</option>
@@ -1079,8 +1089,8 @@ export default function SourcesReport() {
                         {isMonthly ? format(new Date(week), "MMMM yyyy") : format(new Date(week), "MMM dd, yyyy")} — {rowsByWeek[week].length} sources
                       </td>
                     </tr>
-                    {applySort(rowsByWeek[week] || []).map(r => (
-                      <tr key={`${week}-${r.session_source}`} className="border-b border-border/20 hover:bg-muted/10">
+                    {applySort(rowsByWeek[week] || []).map((r, idx) => (
+                      <tr key={`${week}-${r.session_source}-${idx}`} className="border-b border-border/20 hover:bg-muted/10">
                         <td className="px-3 py-2 text-xs text-muted-foreground">{isMonthly ? format(new Date(week), "MMM yyyy") : format(new Date(week), "yyyy-'W'II")}</td>
                         <td className="px-3 py-2 text-sm">{r.session_source}</td>
                          <td className="px-2 py-2 text-right tabular-nums font-medium">{r.sessions.toLocaleString()}</td>
