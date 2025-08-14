@@ -20,18 +20,22 @@ WITH calculations AS (
     sessions,
     demo_submit,
     vf_signup,
+    vf_customer_conversion,
     -- Previous week values
     LAG(sessions, 1) OVER (ORDER BY week_start) AS prev_sessions,
     LAG(demo_submit, 1) OVER (ORDER BY week_start) AS prev_demos,
     LAG(vf_signup, 1) OVER (ORDER BY week_start) AS prev_signups,
+    LAG(vf_customer_conversion, 1) OVER (ORDER BY week_start) AS prev_customers,
     -- 4-week averages
     AVG(sessions) OVER (ORDER BY week_start ROWS BETWEEN 4 PRECEDING AND 1 PRECEDING) AS avg_sessions_4w,
     AVG(demo_submit) OVER (ORDER BY week_start ROWS BETWEEN 4 PRECEDING AND 1 PRECEDING) AS avg_demos_4w,
     AVG(vf_signup) OVER (ORDER BY week_start ROWS BETWEEN 4 PRECEDING AND 1 PRECEDING) AS avg_signups_4w,
+    AVG(vf_customer_conversion) OVER (ORDER BY week_start ROWS BETWEEN 4 PRECEDING AND 1 PRECEDING) AS avg_customers_4w,
     -- 12-week averages
     AVG(sessions) OVER (ORDER BY week_start ROWS BETWEEN 12 PRECEDING AND 1 PRECEDING) AS avg_sessions_12w,
     AVG(demo_submit) OVER (ORDER BY week_start ROWS BETWEEN 12 PRECEDING AND 1 PRECEDING) AS avg_demos_12w,
-    AVG(vf_signup) OVER (ORDER BY week_start ROWS BETWEEN 12 PRECEDING AND 1 PRECEDING) AS avg_signups_12w
+    AVG(vf_signup) OVER (ORDER BY week_start ROWS BETWEEN 12 PRECEDING AND 1 PRECEDING) AS avg_signups_12w,
+    AVG(vf_customer_conversion) OVER (ORDER BY week_start ROWS BETWEEN 12 PRECEDING AND 1 PRECEDING) AS avg_customers_12w
   FROM analytics.wk_totals
 )
 SELECT 
@@ -39,6 +43,7 @@ SELECT
   sessions,
   demo_submit,
   vf_signup,
+  vf_customer_conversion,
   -- Sessions calculations
   sessions - prev_sessions AS sessions_vs_prev,
   CASE 
@@ -80,7 +85,21 @@ SELECT
   CASE 
     WHEN avg_signups_12w > 0 THEN ROUND(((vf_signup - avg_signups_12w)::numeric / avg_signups_12w) * 100, 1)
     ELSE NULL 
-  END AS vf_signup_vs_12w_pct
+  END AS vf_signup_vs_12w_pct,
+  -- Customers calculations
+  vf_customer_conversion - prev_customers AS vf_customer_conversion_vs_prev,
+  CASE 
+    WHEN prev_customers > 0 THEN ROUND(((vf_customer_conversion - prev_customers)::numeric / prev_customers) * 100, 1)
+    ELSE NULL 
+  END AS vf_customer_conversion_vs_prev_pct,
+  CASE 
+    WHEN avg_customers_4w > 0 THEN ROUND(((vf_customer_conversion - avg_customers_4w)::numeric / avg_customers_4w) * 100, 1)
+    ELSE NULL 
+  END AS vf_customer_conversion_vs_4w_pct,
+  CASE 
+    WHEN avg_customers_12w > 0 THEN ROUND(((vf_customer_conversion - avg_customers_12w)::numeric / avg_customers_12w) * 100, 1)
+    ELSE NULL 
+  END AS vf_customer_conversion_vs_12w_pct
 FROM calculations;
 
 -- 2. By channel grouping view (simplified with just WoW percentages)

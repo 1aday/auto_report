@@ -75,7 +75,8 @@ BEGIN
         session_default_channel_grouping,
         first_user_source,
         SUM(CASE WHEN event_name = ''demo_submit'' THEN event_count ELSE 0 END) as demo_submit,
-        SUM(CASE WHEN event_name = ''vf_signup'' THEN event_count ELSE 0 END) as vf_signup
+        SUM(CASE WHEN event_name = ''vf_signup'' THEN event_count ELSE 0 END) as vf_signup,
+        SUM(CASE WHEN event_name = ''vf_customer_conversion'' THEN event_count ELSE 0 END) as vf_customer_conversion
       FROM public.ga4_events
       GROUP BY 1,2,3,4,5,6,7
     )
@@ -89,7 +90,8 @@ BEGIN
       COALESCE(s.first_user_source, e.first_user_source) as first_user_source,
       COALESCE(s.sessions, 0) as sessions,
       COALESCE(e.demo_submit, 0) as demo_submit,
-      COALESCE(e.vf_signup, 0) as vf_signup
+      COALESCE(e.vf_signup, 0) as vf_signup,
+      COALESCE(e.vf_customer_conversion, 0) as vf_customer_conversion
     FROM sessions_agg s
     FULL OUTER JOIN events_agg e 
       ON s.week_start = e.week_start
@@ -113,7 +115,8 @@ SELECT
   week_start,
   SUM(sessions) AS sessions,
   SUM(demo_submit) AS demo_submit,
-  SUM(vf_signup) AS vf_signup
+  SUM(vf_signup) AS vf_signup,
+  SUM(vf_customer_conversion) AS vf_customer_conversion
 FROM analytics.weekly_breakdown
 GROUP BY week_start;
 
@@ -127,7 +130,8 @@ SELECT
   session_default_channel_grouping AS channel,
   SUM(sessions) AS sessions,
   SUM(demo_submit) AS demo_submit,
-  SUM(vf_signup) AS vf_signup
+  SUM(vf_signup) AS vf_signup,
+  SUM(vf_customer_conversion) AS vf_customer_conversion
 FROM analytics.weekly_breakdown
 GROUP BY week_start, session_default_channel_grouping;
 
@@ -142,7 +146,8 @@ SELECT
   session_medium AS med,
   SUM(sessions) AS sessions,
   SUM(demo_submit) AS demo_submit,
-  SUM(vf_signup) AS vf_signup
+  SUM(vf_signup) AS vf_signup,
+  SUM(vf_customer_conversion) AS vf_customer_conversion
 FROM analytics.weekly_breakdown
 GROUP BY week_start, session_source, session_medium;
 
@@ -160,7 +165,8 @@ SELECT
   first_user_source AS first_src,
   SUM(sessions) AS sessions,
   SUM(demo_submit) AS demo_submit,
-  SUM(vf_signup) AS vf_signup
+  SUM(vf_signup) AS vf_signup,
+  SUM(vf_customer_conversion) AS vf_customer_conversion
 FROM analytics.weekly_breakdown
 GROUP BY week_start, session_source, session_medium, session_campaign_name, session_keyword, first_user_source;
 

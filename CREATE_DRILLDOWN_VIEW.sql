@@ -16,7 +16,8 @@ SELECT
   first_user_source,
   sessions,
   demo_submit,
-  vf_signup
+  vf_signup,
+  vf_customer_conversion
 FROM analytics.weekly_breakdown;
 
 -- Grant permissions for the view

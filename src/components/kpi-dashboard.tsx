@@ -55,8 +55,10 @@ interface WeeklyData {
   sessions: number
   demo_submit: number
   vf_signup: number
+  vf_customer_conversion: number
   signup_conversion_rate: number
   demo_conversion_rate: number
+  customer_conversion_rate: number
   sessions_vs_prev: number | null
   sessions_vs_prev_pct: number | null
   sessions_vs_4w_pct: number | null
@@ -69,6 +71,10 @@ interface WeeklyData {
   vf_signup_vs_prev_pct: number | null
   vf_signup_vs_4w_pct: number | null
   vf_signup_vs_12w_pct: number | null
+  vf_customer_conversion_vs_prev: number | null
+  vf_customer_conversion_vs_prev_pct: number | null
+  vf_customer_conversion_vs_4w_pct: number | null
+  vf_customer_conversion_vs_12w_pct: number | null
 }
 
 // Configuration for data fetching
@@ -93,6 +99,7 @@ const useWeeklyData = () => {
           sessions,
           demo_submit,
           vf_signup,
+          vf_customer_conversion,
           signup_conversion_rate,
           demo_conversion_rate,
           sessions_vs_prev,
@@ -106,7 +113,11 @@ const useWeeklyData = () => {
           vf_signup_vs_prev,
           vf_signup_vs_prev_pct,
           vf_signup_vs_4w_pct,
-          vf_signup_vs_12w_pct
+          vf_signup_vs_12w_pct,
+          vf_customer_conversion_vs_prev,
+          vf_customer_conversion_vs_prev_pct,
+          vf_customer_conversion_vs_4w_pct,
+          vf_customer_conversion_vs_12w_pct
         `)
         .order("week_start", { ascending: false })
       
@@ -143,6 +154,12 @@ const useWeeklyData = () => {
 const formatNumber = (num: number | null | undefined) => {
   if (num === null || num === undefined) return "—"
   return new Intl.NumberFormat("en-US").format(num)
+}
+
+// Compact number formatter for tight card layouts (e.g., 12.3K, 1.2M)
+const formatCompactNumber = (num: number | null | undefined) => {
+  if (num === null || num === undefined) return "—"
+  return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(num)
 }
 
 // Format percentage with color
@@ -312,13 +329,13 @@ const MetricCard = ({
     const sign = diff >= 0 ? "+" : "-"
     const absDiff = Math.abs(diff)
     
-    // For signups/demos, round up and don't show decimals
+    // For signups/demos, round up and use compact format
     if (title && (title.toLowerCase().includes('signup') || title.toLowerCase().includes('demo'))) {
-      return `${sign}${Math.ceil(absDiff).toLocaleString()}`
+      return `${sign}${formatCompactNumber(Math.ceil(absDiff))}`
     }
     
-    // For other metrics, use standard formatting
-    return `${sign}${formatNumber(absDiff)}`
+    // For other metrics, use compact formatting
+    return `${sign}${formatCompactNumber(absDiff)}`
   }
 
   return (
@@ -326,8 +343,9 @@ const MetricCard = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
+      className="h-full min-w-0"
     >
-      <Card className={cn("relative overflow-hidden gap-2", `bg-gradient-to-br ${colorClasses[color as keyof typeof colorClasses]}`)}>
+      <Card className={cn("relative overflow-hidden gap-2 h-full flex flex-col", `bg-gradient-to-br ${colorClasses[color as keyof typeof colorClasses]}`)}>
         <CardHeader className="pb-0">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base sm:text-lg font-semibold tracking-tight text-foreground/90">
@@ -338,11 +356,11 @@ const MetricCard = ({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-0">
-          <div className="space-y-0">
+        <CardContent className="pt-0 flex-1 flex flex-col">
+          <div className="space-y-0 flex-1 flex flex-col">
             <div>
               <div className="text-display font-bold tabular-nums mt-0">
-                {formatNumber(current)}
+                {formatCompactNumber(current)}
               </div>
               <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-caption">
                 {shouldProject && (
@@ -350,14 +368,14 @@ const MetricCard = ({
                     const pc = previous ? ((projectedTotal - previous) / previous) * 100 : null
                     return (
                       <div className="text-muted-foreground">
-                        Projected: <span className={cn("font-medium", pc !== null && pc >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive")}>{formatNumber(projectedTotal)}</span>
+                        Projected: <span className={cn("font-medium", pc !== null && pc >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive")}>{formatCompactNumber(projectedTotal)}</span>
                       </div>
                     )
                   })()
                 )}
                 {typeof previous === 'number' && (
                   <div className="text-muted-foreground">
-                    Last week: <span className="font-medium text-foreground">{formatNumber(previous)}</span>
+                    Last week: <span className="font-medium text-foreground">{formatCompactNumber(previous)}</span>
                   </div>
                 )}
               </div>
@@ -501,7 +519,7 @@ const MetricCard = ({
                         {formatPercentage(changePct)}
                       </span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground">vs last wk</span>
+                    <span className="text-[10px] text-muted-foreground">WoW</span>
                   </div>
                   {actualDiffPrev !== null && (
                     <span className="text-[9px] text-muted-foreground/60">
@@ -518,7 +536,7 @@ const MetricCard = ({
                         {formatPercentage(vs4WeekPct)}
                       </span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground">vs 4wk avg</span>
+                    <span className="text-[10px] text-muted-foreground">Wo4W</span>
                   </div>
                   {actualDiff4Week !== null && (
                     <span className="text-[9px] text-muted-foreground/60">
@@ -535,7 +553,7 @@ const MetricCard = ({
                         {formatPercentage(vs12WeekPct)}
                       </span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground">vs 12wk avg</span>
+                    <span className="text-[10px] text-muted-foreground">Wo12W</span>
                   </div>
                   {actualDiff12Week !== null && (
                     <span className="text-[9px] text-muted-foreground/60">
@@ -560,7 +578,7 @@ const MetricCard = ({
                           {formatPercentage(projectedVsPrev)}
                         </span>
                       </div>
-                      <span className="text-[10px] text-muted-foreground">vs last wk</span>
+                      <span className="text-[10px] text-muted-foreground">WoW</span>
                     </div>
                     {projectedDiffPrev !== null && (
                       <span className="text-[9px] text-muted-foreground/60">
@@ -577,7 +595,7 @@ const MetricCard = ({
                           {formatPercentage(projectedVs4Week)}
                         </span>
                       </div>
-                      <span className="text-[10px] text-muted-foreground">vs 4wk avg</span>
+                      <span className="text-[10px] text-muted-foreground">Wo4W</span>
                     </div>
                     {projectedDiff4Week !== null && (
                       <span className="text-[9px] text-muted-foreground/60">
@@ -594,7 +612,7 @@ const MetricCard = ({
                           {formatPercentage(projectedVs12Week)}
                         </span>
                       </div>
-                      <span className="text-[10px] text-muted-foreground">vs 12wk avg</span>
+                      <span className="text-[10px] text-muted-foreground">Wo12W</span>
                     </div>
                     {projectedDiff12Week !== null && (
                       <span className="text-[9px] text-muted-foreground/60">
@@ -607,19 +625,27 @@ const MetricCard = ({
             </div>
             
             {previous !== null && (
-              <div className="text-xs text-muted-foreground border-t pt-2">
+              <div className="text-xs text-muted-foreground border-t pt-2 mt-auto">
                 <div className="flex justify-between items-center">
-                  <span>Last week: {formatNumber(previous)}</span>
+                  <span>Last week: {formatCompactNumber(previous)}</span>
                   {shouldProject && projectedTotal !== current && (
-                    <Badge 
-                      className={cn(
-                        "text-[10px] px-1.5 py-0",
-                        projectedTotal > previous ? "bg-emerald-600 text-white" : "bg-destructive text-destructive-foreground"
-                      )}
-                    >
-                      <Sparkles className="h-2 w-2 mr-0.5" />
-                      {projectedTotal > previous ? "Ahead" : "Behind"}
-                    </Badge>
+                    (() => {
+                      const pct = projectedVsPrev ?? 0
+                      const isAhead = pct > 5
+                      const isBehind = pct < -5
+                      const label = isAhead ? "Ahead" : isBehind ? "Behind" : "On track"
+                      const cls = isAhead
+                        ? "bg-emerald-600 text-white"
+                        : isBehind
+                        ? "bg-destructive text-destructive-foreground"
+                        : "bg-slate-600 text-white"
+                      return (
+                        <Badge className={cn("text-[10px] px-1.5 py-0", cls)}>
+                          <Sparkles className="h-2 w-2 mr-0.5" />
+                          {label}
+                        </Badge>
+                      )
+                    })()
                   )}
                 </div>
               </div>
@@ -835,6 +861,61 @@ const DataTable = ({ data }: { data: WeeklyData[] }) => {
           )
         },
       },
+      // Customers group
+      {
+        accessorKey: "vf_customer_conversion",
+        header: () => <div className="text-right font-semibold">Customers</div>,
+        cell: ({ row }) => (
+          <div className="text-right font-semibold tabular-nums">
+            {formatNumber(row.getValue("vf_customer_conversion"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "vf_customer_conversion_vs_prev_pct",
+        header: () => <div className="text-right text-sm">WoW</div>,
+        cell: ({ row }) => {
+          const value = row.getValue("vf_customer_conversion_vs_prev_pct") as number | null
+          return (
+            <div 
+              className="text-right tabular-nums text-white px-1 py-0.5 rounded"
+              style={{ backgroundColor: getHeatMapBgColor(value) }}
+            >
+              {formatPercentage(value)}
+            </div>
+          )
+        },
+      },
+      {
+        accessorKey: "vf_customer_conversion_vs_4w_pct",
+        header: () => <div className="text-right text-sm">4W</div>,
+        cell: ({ row }) => {
+          const value = row.getValue("vf_customer_conversion_vs_4w_pct") as number | null
+          return (
+            <div 
+              className="text-right tabular-nums text-sm text-white px-1 py-0.5 rounded"
+              style={{ backgroundColor: getHeatMapBgColor(value) }}
+            >
+              {formatPercentage(value)}
+            </div>
+          )
+        },
+      },
+      {
+        accessorKey: "vf_customer_conversion_vs_12w_pct",
+        header: () => <div className="text-right text-sm">12W</div>,
+        cell: ({ row }) => {
+          const value = row.getValue("vf_customer_conversion_vs_12w_pct") as number | null
+          return (
+            <div 
+              className="text-right tabular-nums text-sm text-white px-1 py-0.5 rounded"
+              style={{ backgroundColor: getHeatMapBgColor(value) }}
+            >
+              {formatPercentage(value)}
+            </div>
+          )
+        },
+      },
       // Conversion Rates
       {
         accessorKey: "signup_conversion_rate",
@@ -858,6 +939,27 @@ const DataTable = ({ data }: { data: WeeklyData[] }) => {
         header: () => <div className="text-right font-semibold">Demo Conv %</div>,
         cell: ({ row }) => {
           const value = row.getValue("demo_conversion_rate") as number
+          return (
+            <div 
+              className="text-right font-semibold tabular-nums text-white px-2 py-0.5 rounded"
+              style={{ 
+                backgroundColor: '#6b7280' 
+              }}
+            >
+              {value.toFixed(2)}%
+            </div>
+          )
+        },
+      },
+      {
+        header: () => <div className="text-right font-semibold">Customer Conv %</div>,
+        accessorFn: (row) => {
+          const denominator = row.sessions || 0
+          return denominator > 0 ? (row.vf_customer_conversion / denominator) * 100 : 0
+        },
+        id: "customer_conversion_rate",
+        cell: ({ getValue }) => {
+          const value = getValue<number>()
           return (
             <div 
               className="text-right font-semibold tabular-nums text-white px-2 py-0.5 rounded"
@@ -903,7 +1005,10 @@ const DataTable = ({ data }: { data: WeeklyData[] }) => {
               <th colSpan={4} className="px-2 py-1.5 text-center bg-amber-500/10 border-r border-border/20">
                 <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Demos</span>
               </th>
-              <th colSpan={2} className="px-2 py-1.5 text-center bg-emerald-500/5">
+              <th colSpan={4} className="px-2 py-1.5 text-center bg-rose-500/5 border-r border-border/20">
+                <span className="text-xs font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400">Customers</span>
+              </th>
+              <th colSpan={3} className="px-2 py-1.5 text-center bg-emerald-500/5">
                 <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Conversions</span>
               </th>
             </tr>
@@ -915,7 +1020,8 @@ const DataTable = ({ data }: { data: WeeklyData[] }) => {
                   const isSessionsGroup = idx >= 1 && idx <= 4
                   const isSignupsGroup = idx >= 5 && idx <= 8
                   const isDemosGroup = idx >= 9 && idx <= 12
-                  const isConversionsGroup = idx >= 13 && idx <= 14
+                  const isCustomersGroup = idx >= 13 && idx <= 16
+                  const isConversionsGroup = idx >= 17 && idx <= 19
                   
                       return (
                     <th
@@ -926,11 +1032,13 @@ const DataTable = ({ data }: { data: WeeklyData[] }) => {
                           isSessionsGroup && "bg-teal-900/30 text-teal-300",
                           isSignupsGroup && "bg-violet-900/30 text-violet-300",
                           isDemosGroup && "bg-amber-900/30 text-amber-200",
+                        isCustomersGroup && "bg-rose-900/30 text-rose-200",
                         isConversionsGroup && "bg-emerald-500/5",
                           idx === 4 && "border-r border-border/20",
                           idx === 8 && "border-r border-border/20",
                           idx === 12 && "border-r border-border/20",
-                          idx === 13 && "border-r border-border/10"
+                          idx === 16 && "border-r border-border/20",
+                          idx === 17 && "border-r border-border/10"
                       )}
                     >
                       {header.isPlaceholder
@@ -961,7 +1069,8 @@ const DataTable = ({ data }: { data: WeeklyData[] }) => {
                     const isSessionsGroup = idx >= 1 && idx <= 4
                     const isSignupsGroup = idx >= 5 && idx <= 8
                     const isDemosGroup = idx >= 9 && idx <= 12
-                    const isConversionsGroup = idx >= 13 && idx <= 14
+                    const isCustomersGroup = idx >= 13 && idx <= 16
+                    const isConversionsGroup = idx >= 17 && idx <= 19
                     
                       return (
                       <td 
@@ -971,7 +1080,7 @@ const DataTable = ({ data }: { data: WeeklyData[] }) => {
                           isFirstColumn && "border-r border-border/10",
                           // Neutral borders only
                           "border-r border-border/10",
-                          idx === 14 && "border-r-0"
+                          idx === 19 && "border-r-0"
                         )}
                       >
                         {flexRender(
@@ -1068,14 +1177,14 @@ export function KPIDashboard() {
 
         {/* Metric Cards */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
+          <div className="grid grid-cols-1 sm:[grid-template-columns:repeat(auto-fit,minmax(140px,1fr))] md:[grid-template-columns:repeat(4,minmax(0,1fr))] gap-2">
+            {[1, 2, 3, 4].map((i) => (
               <Skeleton key={i} className="h-32" />
             ))}
           </div>
         ) : (
           latestWeek && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="kpi-cards grid grid-cols-1 sm:[grid-template-columns:repeat(auto-fit,minmax(140px,1fr))] md:[grid-template-columns:repeat(4,minmax(0,1fr))] gap-2">
               <MetricCard
                 title="Sessions"
                 icon={Activity}
@@ -1111,6 +1220,18 @@ export function KPIDashboard() {
                 historicalData={(data || []).map(d => d.demo_submit)}
                 weekStart={latestWeek.week_start}
                 color="amber"
+              />
+              <MetricCard
+                title="Customers"
+                icon={TrendingUp}
+                current={latestWeek.vf_customer_conversion}
+                previous={previousWeek?.vf_customer_conversion || null}
+                changePct={latestWeek.vf_customer_conversion_vs_prev_pct}
+                vs4WeekPct={latestWeek.vf_customer_conversion_vs_4w_pct}
+                vs12WeekPct={latestWeek.vf_customer_conversion_vs_12w_pct}
+                historicalData={(data || []).map(d => d.vf_customer_conversion)}
+                weekStart={latestWeek.week_start}
+                color="rose"
               />
             </div>
           )

@@ -32,7 +32,7 @@ type Row = {
 
 const pctText = (v: number | null, digits: number = 1) => (v === null || v === undefined ? "—" : `${v > 0 ? "+" : ""}${v.toFixed(digits)}%`)
 
-const Heat = ({ value, precision = 1 }: { value: number | null, precision?: number }) => {
+const Heat = React.memo(function Heat({ value, precision = 1 }: { value: number | null; precision?: number }) {
   if (value === null || value === undefined) return <span>—</span>
   const abs = Math.abs(value)
   const bg = value > 0
@@ -43,7 +43,7 @@ const Heat = ({ value, precision = 1 }: { value: number | null, precision?: numb
       {pctText(value, precision)}
     </span>
   )
-}
+})
 
 const formatNumber = (num: number) => new Intl.NumberFormat('en-US').format(num)
 
@@ -57,7 +57,7 @@ export default function SourcesReport() {
   const midWindowLabel = isMonthly ? '3M' : '4W'
   const longWindowLabel = isMonthly ? '12M' : '12W'
   const queryClient = useQueryClient()
-  const { data } = useQuery({
+  const { data } = useQuery<Row[]>({
     queryKey: ["source-changes-pct", isMonthly ? 'monthly' : 'weekly'],
     queryFn: async () => {
       if (isMonthly) {
@@ -68,21 +68,21 @@ export default function SourcesReport() {
         const pages: MonthlyRow[] = []
         for (let guard = 0; guard < 100; guard++) {
           const { data: page, error } = await supabase
-            .from("ga4_monthly_source_changes_pct")
-            .select(`
-              month_start,
-              session_source,
-              sessions,
-              first_visit, demo_submit, vf_signup,
-              first_visit_mom_pct, demo_submit_mom_pct, vf_signup_mom_pct,
-              first_visit_mo3m_pct, demo_submit_mo3m_pct, vf_signup_mo3m_pct,
-              first_visit_mo12m_pct, demo_submit_mo12m_pct, vf_signup_mo12m_pct
-            `)
-            .order("month_start", { ascending: false })
+          .from("ga4_monthly_source_changes_pct")
+          .select(`
+            month_start,
+            session_source,
+            sessions,
+            first_visit, demo_submit, vf_signup,
+            first_visit_mom_pct, demo_submit_mom_pct, vf_signup_mom_pct,
+            first_visit_mo3m_pct, demo_submit_mo3m_pct, vf_signup_mo3m_pct,
+            first_visit_mo12m_pct, demo_submit_mo12m_pct, vf_signup_mo12m_pct
+          `)
+          .order("month_start", { ascending: false })
             .range(from, from + pageSize - 1)
-          if (error) throw error
+        if (error) throw error
           if (!page || page.length === 0) break
-          pages.push(...(page as MonthlyRow[]))
+          pages.push(...(page as unknown as MonthlyRow[]))
           if (page.length < pageSize) break
           from += pageSize
         }
@@ -120,11 +120,12 @@ export default function SourcesReport() {
           .order("week_start", { ascending: false })
 
         if (error) throw error
-        return data as Row[]
+        return (data || []) as Row[]
       }
     },
     refetchInterval: 60000,
     staleTime: 30000,
+    placeholderData: [],
   })
 
   // Sorting state
@@ -159,6 +160,7 @@ export default function SourcesReport() {
 
   // Signature of selected sources for stable memo/query keys
   const selectedSourcesSig = React.useMemo(() => [...selectedSources].sort().join('|'), [selectedSources])
+  const deferredSelectedSourcesSig = React.useDeferredValue(selectedSourcesSig)
 
   // Ignore rules admin data
   type Rule = { id: number; pattern: string; is_glob: boolean; is_regex: boolean; notes: string | null }
@@ -210,8 +212,8 @@ export default function SourcesReport() {
   // Note: avoid early returns to keep Hook order stable
 
   // Monthly pivot fetch for charts (ensures all months show, not only top-40)
-  const { data: monthlyPivotData } = useQuery({
-    queryKey: ['monthly-pivot', selectedSourcesSig, selectedEvent],
+  const { data: monthlyPivotData } = useQuery<{ month_start: string; session_source: string; sessions: number; first_visit: number; demo_submit: number; vf_signup: number }[]>({
+    queryKey: ['monthly-pivot', deferredSelectedSourcesSig, selectedEvent],
     enabled: !!isMonthly,
     queryFn: async () => {
       let query = supabase
@@ -224,8 +226,9 @@ export default function SourcesReport() {
       }
       const { data, error } = await query
       if (error) throw error
-      return data as { month_start: string, session_source: string, sessions: number, first_visit: number, demo_submit: number, vf_signup: number }[]
-    }
+      return (data || []) as { month_start: string; session_source: string; sessions: number; first_visit: number; demo_submit: number; vf_signup: number }[]
+    },
+    placeholderData: [],
   })
 
   // Fallback: if monthly change view is unavailable/empty, derive rows from monthly pivot
@@ -372,17 +375,20 @@ export default function SourcesReport() {
     return map
   }, [dataRows, (periodBuckets || []).join('|'), selectedSourcesSig])
 
-  // Aggregate totals by week across current filter
-  const aggregatesByWeek: Record<string, { sessions: number; demo_submit: number; vf_signup: number }> = {}
+  // Aggregate totals by week across current filter (memoized)
+  const aggregatesByWeek: Record<string, { sessions: number; demo_submit: number; vf_signup: number }> = React.useMemo(() => {
+    const agg: Record<string, { sessions: number; demo_submit: number; vf_signup: number }> = {}
   for (const w of (periodBuckets || [])) {
     const rows = rowsByWeek[w] || []
-    aggregatesByWeek[w] = rows.reduce((acc, r) => {
+      agg[w] = rows.reduce((acc, r) => {
       acc.sessions += r.sessions || 0
       acc.demo_submit += r.demo_submit || 0
       acc.vf_signup += r.vf_signup || 0
       return acc
     }, { sessions: 0, demo_submit: 0, vf_signup: 0 })
   }
+    return agg
+  }, [rowsByWeek, (periodBuckets || []).join('|')])
 
   // Determine reference week based on user selection
   const referenceWeek = React.useMemo(() => {
@@ -576,9 +582,32 @@ export default function SourcesReport() {
   const Chart = () => {
     const chartHeight = 110
     const margin = { top: 12, right: 12, bottom: 28, left: 38 }
-    const barWidth = 12
     const gap = 6
-    const innerWidth = Math.max(100, series.length * (barWidth + gap) - gap)
+    const wrapperRef = React.useRef<HTMLDivElement | null>(null)
+    const [containerWidth, setContainerWidth] = React.useState<number>(0)
+    React.useEffect(() => {
+      if (!wrapperRef.current) return
+      const el = wrapperRef.current
+      const ro = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const w = entry.contentRect.width
+          setContainerWidth(w)
+        }
+      })
+      ro.observe(el)
+      setContainerWidth(el.clientWidth)
+      return () => ro.disconnect()
+    }, [])
+    const computedBarWidth = React.useMemo(() => {
+      if (!containerWidth || series.length === 0) return 12
+      const available = Math.max(120, containerWidth - margin.left - margin.right)
+      const bw = Math.floor(available / series.length) - gap
+      return Math.max(10, Math.min(28, bw))
+    }, [containerWidth, series.length])
+    const innerWidth = Math.max(
+      containerWidth > 0 ? containerWidth - margin.left - margin.right : 100,
+      series.length * (computedBarWidth + gap) - gap
+    )
     const totalWidth = margin.left + innerWidth + margin.right
     const totalHeight = margin.top + chartHeight + margin.bottom
 
@@ -618,6 +647,7 @@ export default function SourcesReport() {
             </div>
           </div>
         </div>
+        <div ref={wrapperRef} className="w-full">
         <svg viewBox={`0 0 ${totalWidth} ${totalHeight}`} className="w-full h-[180px]">
           <defs>
             <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
@@ -645,21 +675,21 @@ export default function SourcesReport() {
           {series.map((s, i) => {
             const value = s.count
             const h = Math.max(2, (value / yMax) * chartHeight)
-            const x = margin.left + i * (barWidth + gap)
+            const x = margin.left + i * (computedBarWidth + gap)
             const y = margin.top + (chartHeight - h)
             const isHover = hoverIndex === i
             return (
               <g key={s.week_start} onMouseEnter={() => setHoverIndex(i)} onMouseLeave={() => setHoverIndex(null)}>
-                <rect x={x} y={y} width={barWidth} height={h} rx={3} fill={isHover ? col.base : 'url(#barGrad)'} opacity={isHover ? 1 : 0.95} />
+                <rect x={x} y={y} width={computedBarWidth} height={h} rx={3} fill={isHover ? col.base : 'url(#barGrad)'} opacity={isHover ? 1 : 0.95} />
                 {/* label on hover */}
                 {isHover && (
-                  <text x={x + barWidth / 2} y={y - 6} textAnchor="middle" fontSize={10} fill="currentColor" opacity={0.85}>
+                  <text x={x + computedBarWidth / 2} y={y - 6} textAnchor="middle" fontSize={10} fill="currentColor" opacity={0.85}>
                     {value.toLocaleString()}
                   </text>
                 )}
                 {/* x tick label every 2 bars */}
                 {i % 2 === 0 && (
-                  <text x={x + barWidth / 2} y={margin.top + chartHeight + 14} textAnchor="middle" fontSize={9} fill="currentColor" opacity={0.6}>
+                  <text x={x + computedBarWidth / 2} y={margin.top + chartHeight + 14} textAnchor="middle" fontSize={9} fill="currentColor" opacity={0.6}>
                     {(() => { const d = new Date(s.week_start); return isMonthly ? format(d, "MMM ''yy") : `W${String(getISOWeek(d)).padStart(2,'0')}` })()}
                   </text>
                 )}
@@ -667,6 +697,7 @@ export default function SourcesReport() {
             )
           })}
         </svg>
+        </div>
       </div>
     )
   }
@@ -705,9 +736,31 @@ export default function SourcesReport() {
   const ConversionChart = () => {
     const chartHeight = 110
     const margin = { top: 12, right: 12, bottom: 28, left: 38 }
-    const barWidth = 12
     const gap = 6
-    const innerWidth = Math.max(100, seriesConv.length * (barWidth + gap) - gap)
+    const wrapperRef = React.useRef<HTMLDivElement | null>(null)
+    const [containerWidth, setContainerWidth] = React.useState<number>(0)
+    React.useEffect(() => {
+      if (!wrapperRef.current) return
+      const el = wrapperRef.current
+      const ro = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          setContainerWidth(entry.contentRect.width)
+        }
+      })
+      ro.observe(el)
+      setContainerWidth(el.clientWidth)
+      return () => ro.disconnect()
+    }, [])
+    const computedBarWidth = React.useMemo(() => {
+      if (!containerWidth || seriesConv.length === 0) return 12
+      const available = Math.max(120, containerWidth - margin.left - margin.right)
+      const bw = Math.floor(available / seriesConv.length) - gap
+      return Math.max(10, Math.min(28, bw))
+    }, [containerWidth, seriesConv.length])
+    const innerWidth = Math.max(
+      containerWidth > 0 ? containerWidth - margin.left - margin.right : 100,
+      seriesConv.length * (computedBarWidth + gap) - gap
+    )
     const totalWidth = margin.left + innerWidth + margin.right
     const totalHeight = margin.top + chartHeight + margin.bottom
 
@@ -750,6 +803,7 @@ export default function SourcesReport() {
             </div>
           </div>
         </div>
+        <div ref={wrapperRef} className="w-full">
         <svg viewBox={`0 0 ${totalWidth} ${totalHeight}`} className="w-full h-[180px]">
           <defs>
             <linearGradient id="barGradConv" x1="0" y1="0" x2="0" y2="1">
@@ -775,19 +829,19 @@ export default function SourcesReport() {
           {seriesConv.map((s, i) => {
             const value = s.pct
             const h = Math.max(2, (value / yMax) * chartHeight)
-            const x = margin.left + i * (barWidth + gap)
+            const x = margin.left + i * (computedBarWidth + gap)
             const y = margin.top + (chartHeight - h)
             const isHover = hoverIndexConv === i
             return (
               <g key={s.week_start} onMouseEnter={() => setHoverIndexConv(i)} onMouseLeave={() => setHoverIndexConv(null)}>
-                <rect x={x} y={y} width={barWidth} height={h} rx={3} fill={isHover ? col.base : 'url(#barGradConv)'} opacity={isHover ? 1 : 0.95} />
+                <rect x={x} y={y} width={computedBarWidth} height={h} rx={3} fill={isHover ? col.base : 'url(#barGradConv)'} opacity={isHover ? 1 : 0.95} />
                 {isHover && (
-                  <text x={x + barWidth / 2} y={y - 6} textAnchor="middle" fontSize={10} fill="currentColor" opacity={0.85}>
+                  <text x={x + computedBarWidth / 2} y={y - 6} textAnchor="middle" fontSize={10} fill="currentColor" opacity={0.85}>
                     {value.toFixed(2)}%
                   </text>
                 )}
                 {i % 2 === 0 && (
-                  <text x={x + barWidth / 2} y={margin.top + chartHeight + 14} textAnchor="middle" fontSize={9} fill="currentColor" opacity={0.6}>
+                  <text x={x + computedBarWidth / 2} y={margin.top + chartHeight + 14} textAnchor="middle" fontSize={9} fill="currentColor" opacity={0.6}>
                     {(() => { const d = new Date(s.week_start); return isMonthly ? format(d, "MMM ''yy") : `W${String(getISOWeek(d)).padStart(2,'0')}` })()}
                   </text>
                 )}
@@ -795,6 +849,7 @@ export default function SourcesReport() {
             )
           })}
         </svg>
+        </div>
       </div>
     )
   }
@@ -1065,7 +1120,7 @@ export default function SourcesReport() {
                 <tr className="border-b bg-muted/20">
                   <th className="text-left px-3 py-2 text-xs font-semibold">{isMonthly ? 'Month' : 'Week'}</th>
                   <th className="text-left px-3 py-2 text-xs font-semibold">Source</th>
-                      <th className="text-right px-2 py-2 text-xs font-semibold">Sessions</th>
+                  <th className="text-right px-2 py-2 text-xs font-semibold">Sessions</th>
                       
                   <th className="text-right px-2 py-2 text-xs font-semibold">First Visit</th>
                   <th className="text-right px-2 py-2 text-xs font-semibold">WoW %</th>
@@ -1093,7 +1148,7 @@ export default function SourcesReport() {
                       <tr key={`${week}-${r.session_source}-${idx}`} className="border-b border-border/20 hover:bg-muted/10">
                         <td className="px-3 py-2 text-xs text-muted-foreground">{isMonthly ? format(new Date(week), "MMM yyyy") : format(new Date(week), "yyyy-'W'II")}</td>
                         <td className="px-3 py-2 text-sm">{r.session_source}</td>
-                         <td className="px-2 py-2 text-right tabular-nums font-medium">{r.sessions.toLocaleString()}</td>
+                        <td className="px-2 py-2 text-right tabular-nums font-medium">{r.sessions.toLocaleString()}</td>
                          
                         <td className="px-2 py-2 text-right tabular-nums">{r.first_visit.toLocaleString()}</td>
                         <td className="px-2 py-2 text-right"><Heat value={r.first_visit_wow_pct} /></td>
