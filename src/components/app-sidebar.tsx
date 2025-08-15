@@ -4,7 +4,8 @@ import * as React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart3, TrendingUp, User, RefreshCw, LineChart } from "lucide-react"
+import { BarChart3, TrendingUp, User, RefreshCw, LineChart, Sparkles } from "lucide-react"
+import { AnimatePresence, motion } from "framer-motion"
 
 import {
   Sidebar,
@@ -65,6 +66,28 @@ const menuItems = [
 export function AppSidebar() {
   const pathname = usePathname()
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [secretUnlocked, setSecretUnlocked] = useState(false)
+
+  React.useEffect(() => {
+    try {
+      const stored = typeof window !== 'undefined' && window.localStorage.getItem('vf_unlocked') === '1'
+      if (stored) setSecretUnlocked(true)
+    } catch {}
+    let buffer = ""
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (e.key === 'Escape') { buffer = ""; return }
+      if (e.key.length === 1) {
+        buffer = (buffer + e.key).slice(-20)
+        if (buffer.toLowerCase().includes('voiceflow')) {
+          setSecretUnlocked(true)
+          try { window.localStorage.setItem('vf_unlocked', '1') } catch {}
+        }
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   const refreshMaterializedViews = async () => {
     setIsRefreshing(true)
@@ -120,20 +143,72 @@ export function AppSidebar() {
           <SidebarGroupLabel className="group-data-[collapsible=icon]:sr-only">Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={pathname === item.url}
-                    tooltip={item.title}
+              {/* Always show KPI */}
+              {(() => {
+                const kpi = menuItems.find(m => m.url === '/kpi') || menuItems[0]
+                return (
+                  <SidebarMenuItem key={kpi.title}>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={pathname === kpi.url}
+                      tooltip={kpi.title}
+                    >
+                      <Link href={kpi.url}>
+                        <kpi.icon className="text-sidebar-foreground" />
+                        <span className="group-data-[collapsible=icon]:hidden text-sidebar-foreground">{kpi.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })()}
+
+              {/* Hidden items appear when unlocked with animation */}
+              <AnimatePresence>
+                {secretUnlocked && (
+                  <motion.div
+                    key="unlocked-links"
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
+                    variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }}
                   >
-                  <Link href={item.url}>
-                      <item.icon className="text-sidebar-foreground" />
-                      <span className="group-data-[collapsible=icon]:hidden text-sidebar-foreground">{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                    {menuItems.filter(m => m.url !== '/kpi').map((item) => (
+                      <motion.div
+                        key={item.title}
+                        variants={{ 
+                          hidden: { opacity: 0, y: 8, scale: 0.97 }, 
+                          visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.24, ease: 'easeOut' } } 
+                        }}
+                      >
+                        <SidebarMenuItem>
+                          <div className="relative">
+                            {/* subtle sparkle pop-on animation */}
+                            <motion.span
+                              className="pointer-events-none absolute -left-1.5 -top-1 text-amber-400/80 group-data-[collapsible=icon]:hidden"
+                              initial={{ scale: 0.6, opacity: 0, rotate: -15 }}
+                              animate={{ scale: [0.6, 1.15, 1], opacity: [0, 1, 0.0], rotate: 0 }}
+                              transition={{ duration: 0.6, ease: 'easeOut' }}
+                            >
+                              <Sparkles className="h-3 w-3" />
+                            </motion.span>
+
+                            <SidebarMenuButton 
+                              asChild 
+                              isActive={pathname === item.url}
+                              tooltip={item.title}
+                            >
+                              <Link href={item.url}>
+                                <item.icon className="text-sidebar-foreground" />
+                                <span className="group-data-[collapsible=icon]:hidden text-sidebar-foreground">{item.title}</span>
+                              </Link>
+                            </SidebarMenuButton>
+                          </div>
+                        </SidebarMenuItem>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
